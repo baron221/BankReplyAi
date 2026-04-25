@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏛️ AI Murojaat Tizimi (Compliance & AI Response)
 
-## Getting Started
+**AI Murojaat Tizimi** — bu banklar va davlat tashkilotlari uchun mo'ljallangan, sun'iy intellekt (Gemini 2.0 Flash) yordamida kiruvchi murojaatlarni tahlil qilish va ularga qonuniy asoslangan javoblar tayyorlashni avtomatlashtiruvchi premium platforma.
 
-First, run the development server:
+## 🚀 Asosiy Imkoniyatlar
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **🤖 AI Klassifikatsiya**: Kiruvchi murojaatlarni mavzu, risk darajasi va muddat bo'yicha avtomatik tahlil qilish.
+- **📝 Aqlli Javob Generatsiyasi**: Murojaat turi va bilimlar bazasidagi qonun hujjatlariga tayanib, rasmiy javob matnini tayyorlash.
+- **⚖️ Compliance Nazorati**: Tayyorlangan javobning O'zbekiston qonunchiligi va bank ichki qoidalariga mosligini SI orqali tekshirish.
+- **🔊 Ovozli SI Xulosasi**: Murojaat mazmunini o'zbek va rus tillarida ovozli eshitish imkoniyati.
+- **📂 Hujjatlar Analizi**: Biriktirilgan PDF fayllarni o'qish va ulardagi ma'lumotlarni hisobga olish.
+- **🌍 Ko'p tilli tizim (i18n)**: To'liq o'zbek va rus tillarida ishlash imkoniyati (interfeys + AI).
+- **📊 Audit va Monitoring**: Tizimdagi barcha harakatlarning to'liq tarixi (Audit Log).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠 Texnik Stek
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: Next.js 15 (App Router), React, TailwindCSS (Glassmorphism UI).
+- **Backend**: Next.js Serverless Functions.
+- **AI**: Google Gemini 2.0 Flash API.
+- **Database**: Prisma + SQLite (Better-SQLite3).
+- **Authentication**: Next-Auth.js.
+- **Icons**: Lucide React.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 O'rnatish va Ishga Tushirish
 
-## Learn More
+1.  **Repozitoriyani yuklab oling**:
+    ```bash
+    git clone https://github.com/baron221/BankReplyAi.git
+    cd BankReplyAi
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+2.  **Kutubxonalarni o'rnating**:
+    ```bash
+    npm install
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3.  **Environment variables (.env)** sozlang:
+    ```env
+    DATABASE_URL="file:./dev.db"
+    GEMINI_API_KEY="Sizning_API_Kalitingiz"
+    NEXTAUTH_SECRET="secret_kalit"
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4.  **Bazani tayyorlang**:
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    npx tsx prisma/seed.ts
+    ```
 
-## Deploy on Vercel
+5.  **Loyiha ishga tushiring**:
+    ```bash
+    npm run dev
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🏛 Hackathon Maxsus
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ushbu loyiha bank sohasida byurokratiyani kamaytirish va javob xatlarining sifatini 90% ga oshirish uchun kontseptual yechim sifatida ishlab chiqilgan.
+
+---
+**Muallif**: Bobur Karimov
+**Versiya**: 1.0.0-Premium
