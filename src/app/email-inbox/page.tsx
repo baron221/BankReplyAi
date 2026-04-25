@@ -38,7 +38,7 @@ export default function EmailInboxPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
-  const [aiResult, setAiResult] = useState<{ topic: string; riskScore: number; keywords: string[] } | null>(null);
+  const [aiResult, setAiResult] = useState<{ topic: string; riskScore: number; keywords: string[]; summary?: string; draftResponse?: string } | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -75,7 +75,12 @@ export default function EmailInboxPage() {
         const data = await res.json();
         setAiResult(data);
       } else {
-        setAiResult({ topic: "Klassifikatsiya (demo)", riskScore: 72, keywords: [email.orgType, "murojaat", "bank"] });
+        setAiResult({ 
+          topic: "Klassifikatsiya (demo)", 
+          riskScore: 72, 
+          keywords: [email.orgType, "murojaat", "bank"],
+          summary: "Ushbu email demo rejimida tahlil qilindi."
+        });
       }
     } catch {
       setAiResult({ topic: "Demo klassifikatsiya", riskScore: 65, keywords: ["murojaat", email.orgType] });
@@ -255,6 +260,24 @@ export default function EmailInboxPage() {
                         <div style={{ fontSize: 11, color: "var(--color-muted)" }}>Avtomatik tahlil natijasi</div>
                       </div>
                     </div>
+                    
+                    <div style={{ marginBottom: 16, padding: 12, background: "rgba(102,126,234,0.05)", borderRadius: 10, border: "1px solid rgba(102,126,234,0.1)" }}>
+                      <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 4 }}>AI Xulosasi (Summary)</div>
+                      <div style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, fontWeight: 500 }}>
+                        {aiResult.summary || "Tahlil yakunlandi."}
+                      </div>
+                    </div>
+
+                    {aiResult.draftResponse && (
+                      <div style={{ marginBottom: 16, padding: 12, background: "#f0fdf4", borderRadius: 10, border: "1px solid #bbf7d0" }}>
+                        <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle size={12} /> AI Tayyorlagan Javob Matni:
+                        </div>
+                        <div style={{ fontSize: 12.5, color: "#166534", lineHeight: 1.6, whiteSpace: "pre-wrap", maxHeight: "150px", overflowY: "auto" }}>
+                          {aiResult.draftResponse}
+                        </div>
+                      </div>
+                    )}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                       <div>
                         <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 3 }}>Mavzu</div>

@@ -658,49 +658,49 @@
           <div class="stat grad3" style="font-size:36px">Prisma</div>
           <div class="stat-label">Database</div>
         </div>
+ 
 
+  </div>
 
-      </div>
+  <!-- Navigation -->
+  <div class="arrows">
+    <div class="arrow" onclick="changeSlide(-1)">‹</div>
+    <div class="arrow" onclick="changeSlide(1)">›</div>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div class="slide-num" id="slideNum"></div>
 
-      <!-- Navigation -->
-      <div class="arrows">
-        <div class="arrow" onclick="changeSlide(-1)">‹</div>
-        <div class="arrow" onclick="changeSlide(1)">›</div>
-      </div>
-      <div class="nav" id="nav"></div>
-      <div class="slide-num" id="slideNum"></div>
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const nav = document.getElementById('nav');
+    const slideNum = document.getElementById('slideNum');
+    let current = 0;
 
-      <script>
-        const slides = document.querySelectorAll('.slide');
-        const nav = document.getElementById('nav');
-        const slideNum = document.getElementById('slideNum');
-        let current = 0;
+    slides.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goTo(i);
+      nav.appendChild(dot);
+    });
 
-        slides.forEach((_, i) => {
-          const dot = document.createElement('div');
-          dot.className = 'dot' + (i === 0 ? ' active' : '');
-          dot.onclick = () => goTo(i);
-          nav.appendChild(dot);
-        });
+    function goTo(n) {
+      slides[current].classList.remove('active');
+      document.querySelectorAll('.dot')[current].classList.remove('active');
+      current = (n + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      document.querySelectorAll('.dot')[current].classList.add('active');
+      slideNum.textContent = (current + 1) + ' / ' + slides.length;
+    }
 
-        function goTo(n) {
-          slides[current].classList.remove('active');
-          document.querySelectorAll('.dot')[current].classList.remove('active');
-          current = (n + slides.length) % slides.length;
-          slides[current].classList.add('active');
-          document.querySelectorAll('.dot')[current].classList.add('active');
-          slideNum.textContent = (current + 1) + ' / ' + slides.length;
-        }
+    function changeSlide(dir) { goTo(current + dir); }
 
-        function changeSlide(dir) { goTo(current + dir); }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+      if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
 
-        document.addEventListener('keydown', e => {
-          if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
-          if (e.key === 'ArrowLeft') changeSlide(-1);
-        });
-
-        goTo(0);
-      </script>
+    goTo(0);
+  </script>
 </body>
 
 </html>

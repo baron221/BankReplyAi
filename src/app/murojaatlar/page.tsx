@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import { ORG_LABELS, STATUS_LABELS, RISK_LABELS } from "@/lib/mock-data";
 import { Plus, Search, Filter, Eye } from "lucide-react";
@@ -18,6 +19,7 @@ type Inquiry = {
 };
 
 export default function MurojaatlarPage() {
+  const router = useRouter();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -114,11 +116,17 @@ export default function MurojaatlarPage() {
               ) : inquiries.length === 0 ? (
                 <tr><td colSpan={8} style={{ textAlign: "center", padding: "40px", color: "var(--color-muted)" }}>Hech qanday natija topilmadi</td></tr>
               ) : inquiries.map(inq => (
-                <tr key={inq.id} style={{ cursor: "pointer" }}>
+                <tr 
+                  key={inq.id} 
+                  onClick={() => router.push(`/murojaatlar/${inq.displayId}`)}
+                  style={{ cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(102,126,234,0.03)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
                   <td>
-                    <Link href={`/murojaatlar/${inq.displayId}`} style={{ color: "var(--color-primary)", fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
+                    <span style={{ color: "var(--color-primary)", fontWeight: 700, fontSize: 13 }}>
                       {inq.displayId}
-                    </Link>
+                    </span>
                   </td>
                   <td>
                     <div style={{ fontSize: 13.5, fontWeight: 600, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inq.title}</div>
@@ -134,7 +142,7 @@ export default function MurojaatlarPage() {
                   </td>
                   <td style={{ fontSize: 12, color: "var(--color-muted)" }}>v{inq.version}</td>
                   <td>
-                    <Link href={`/murojaatlar/${inq.displayId}`} className="btn btn-ghost btn-sm btn-icon"><Eye size={14} /></Link>
+                    <div className="btn btn-ghost btn-sm btn-icon"><Eye size={14} /></div>
                   </td>
                 </tr>
               ))}

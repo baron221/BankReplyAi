@@ -35,6 +35,7 @@ model Inquiry {
   assignedToId    String?
   aiResponse      String       @default("")
   aiKeywords      String       @default("") // JSON string
+  aiSummary       String       @default("")
   aiRiskScore     Int          @default(0)
   compliancePassed Boolean     @default(false)
   complianceIssues String      @default("") // JSON string

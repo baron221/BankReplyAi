@@ -247,9 +247,14 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                       <div className="ai-icon"><Brain size={16} /></div>
                       <span style={{ fontWeight: 700, fontSize: 13 }}>AI Klassifikatsiya</span>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                       {safeJSON<string[]>(inquiry.aiKeywords, []).map(k => <span key={k} className="badge badge-yangi">{k}</span>)}
                     </div>
+                    {inquiry.aiSummary && (
+                      <div style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.6, padding: "10px 12px", background: "rgba(102,126,234,0.05)", borderRadius: 8, borderLeft: "3px solid var(--color-primary)" }}>
+                        <strong>AI Xulosasi:</strong> {inquiry.aiSummary}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -370,20 +375,42 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                     </span>
                   </div>
                   <div className="card-body" style={{ paddingTop: 12 }}>
-                    {complianceResult.issues.length > 0 && (
-                      <div style={{ marginBottom: 12 }}>
+                    {complianceResult.issues && complianceResult.issues.length > 0 ? (
+                      <div style={{ marginBottom: 16, padding: 12, background: "#fef2f2", borderRadius: 10, border: "1px solid #fee2e2" }}>
+                        <div style={{ fontSize: 11, color: "#b91c1c", fontWeight: 700, marginBottom: 6 }}>Aniqlangan kamchiliklar:</div>
                         {complianceResult.issues.map((issue, i) => (
-                          <div key={i} style={{ fontSize: 12.5, color: "#b91c1c", marginBottom: 4, display: "flex", gap: 6 }}>
-                            <AlertTriangle size={12} style={{ flexShrink: 0, marginTop: 2 }} /> {issue}
+                          <div key={i} style={{ fontSize: 12.5, color: "#991b1b", marginBottom: 4, display: "flex", gap: 6, lineHeight: 1.5 }}>
+                            <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 2 }} /> {issue}
                           </div>
                         ))}
                       </div>
+                    ) : (
+                      !complianceResult.passed && (
+                        <div style={{ marginBottom: 16, padding: 12, background: "#fffbeb", borderRadius: 10, border: "1px solid #fef3c7", fontSize: 12.5, color: "#92400e" }}>
+                          <AlertTriangle size={13} style={{ display: "inline", marginRight: 6 }} /> AI javobni shubhali deb topdi, lekin aniq sabab ko'rsatmadi.
+                        </div>
+                      )
                     )}
-                    {complianceResult.laws.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 6 }}>Tavsiyalar:</div>
+                    {complianceResult.laws && complianceResult.laws.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Tavsiya etilgan qonuniy asoslar:</div>
                         {complianceResult.laws.map((law, i) => (
-                          <div key={i} className="badge badge-yangi" style={{ display: "block", marginBottom: 4, fontSize: 11 }}>{law}</div>
+                          <div key={i} style={{ 
+                            fontSize: 12, 
+                            color: "var(--color-primary)", 
+                            background: "rgba(102,126,234,0.08)", 
+                            padding: "8px 12px", 
+                            borderRadius: 8, 
+                            marginBottom: 6, 
+                            lineHeight: 1.5,
+                            border: "1px solid rgba(102,126,234,0.15)",
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "flex-start"
+                          }}>
+                            <BookOpen size={13} style={{ flexShrink: 0, marginTop: 3 }} />
+                            <span>{law}</span>
+                          </div>
                         ))}
                       </div>
                     )}

@@ -3,6 +3,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash"
+];
 
 export interface ClassificationResult {
   topic: string;
@@ -11,6 +17,7 @@ export interface ClassificationResult {
   keywords: string[];
   orgType: string;
   summary: string;
+  draftResponse?: string;
 }
 
 export interface GeneratedResponse {
@@ -20,11 +27,35 @@ export interface GeneratedResponse {
   confidence: number;
 }
 
+// ─── AI Runner (Direct, No Retries, Quick Fallback) ──────────────────────────
+
+async function runAI(prompt: string) {
+  let lastError: any;
+  for (const modelName of MODELS) {
+    try {
+      console.log(`AI so'rovi yuborilmoqda: ${modelName}...`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`Model ${modelName} xatolik berdi: ${err.status || err.message}`);
+      
+      // Agar 503 (Band) bo'lsa, juda qisqa kutib ko'ramiz
+      if (err.status === 503 || err.message?.includes('503')) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      
+      // Har qanday xatoda (429, 403, 503) keyingi modelga o'tib ketaveramiz
+      continue;
+    }
+  }
+  throw lastError;
+}
+
 // ─── Classify Inquiry ─────────────────────────────────────────────────────────
 
 export async function classifyInquiry(text: string): Promise<ClassificationResult> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
 Quyidagi rasmiy murojaat matnini tahlil qil va JSON formatida qaytarish:
 
@@ -38,27 +69,24 @@ Quyidagi JSON formatida qaytarishingiz kerak (faqat JSON, hech qanday izoh yoki 
   "riskScore": "Risk darajasi 0-100 oralig'ida (son)",
   "keywords": ["kalit so'z 1", "kalit so'z 2", "kalit so'z 3"],
   "orgType": "prokuratura | soliq | markaziy_bank | davlat",
-  "summary": "Murojaatning qisqacha mazmuni (1-2 gap)"
+  "summary": "Murojaatning qisqacha mazmuni (1-2 gap)",
+  "draftResponse": "Murojaatga beriladigan rasmiy va qonuniy javob matni loyihasi (o'zbek tilida, rasmiy uslubda)"
 }`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-    console.log("Gemini API Javobi (Klassifikatsiya):", responseText);
-    
-    // Remove potential markdown code blocks
+    const responseText = await runAI(prompt);
+    console.log("AI Javobi:", responseText);
     const cleaned = responseText.replace(/```json\n?|\n?```/g, "").trim();
     return JSON.parse(cleaned);
-  } catch (err) {
-    console.error("Gemini API Xatosi (Klassifikatsiya):", err);
-    // Fallback if JSON parsing fails
+  } catch (err: any) {
+    console.error("AI Xatosi:", err);
     return {
       topic: "Aniqlanmadi",
       deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       riskScore: 50,
       keywords: ["murojaat", "bank", "ma'lumot"],
       orgType: "davlat",
-      summary: "AI klassifikatsiya qilishda xatolik yuz berdi.",
+      summary: "Tizimda xatolik yuz berdi.",
     };
   }
 }
@@ -72,8 +100,6 @@ export async function generateResponse(
   topic: string,
   relevantLaws: string[]
 ): Promise<GeneratedResponse> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
   const lawsContext = relevantLaws.join("; ");
 
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
@@ -103,15 +129,14 @@ Javob:
 - Kirish, asosiy qism va xulosa bo'lsin`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
+    const responseText = await runAI(prompt);
     const cleaned = responseText.replace(/```json\n?|\n?```/g, "").trim();
     return JSON.parse(cleaned);
   } catch (err) {
-    console.error("Gemini API xatosi:", err);
+    console.error("AI xatosi:", err);
     return {
-      response: `${orgName}ga,\n\nSizning murojaatingiz qabul qilindi va ko'rib chiqilmoqda. Qonunchilik talablariga muvofiq javob tayyorlanadi.\n\nHurmat bilan,\nBank rahbariyati`,
-      complianceNotes: ["API ulanishda muammo yuz berdi"],
+      response: `${orgName}ga,\n\nSizning murojaatingiz qabul qilindi va ko'rib chiqilmoqda.\n\nHurmat bilan,\nBank rahbariyati`,
+      complianceNotes: ["Xatolik yuz berdi"],
       referencedLaws: relevantLaws,
       confidence: 0,
     };
@@ -124,39 +149,56 @@ export async function checkCompliance(
   responseText: string,
   orgType: string
 ): Promise<{ passed: boolean; issues: string[]; suggestions: string[] }> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-  const prompt = `Sen O'zbekiston bank qonunchiligi bo'yicha compliance mutaxassisisisan.
-Quyidagi javob matnini tekshir va JSON formatida qaytarish:
+  const prompt = `Sen O'zbekiston bank qonunchiligi bo'yicha Compliance nazoratchisisan.
+Sening vazifang - bank tomonidan tayyorlangan javob matnini tekshirish.
 
 JAVOB MATNI:
 ${responseText}
 
 MUROJAAT TURI: ${orgType}
 
-JSON formatida (faqat JSON, kod bloki belgisiz):
+DIQQAT: Faqat quyidagi JSON formatida javob ber:
 {
   "passed": true/false,
-  "issues": ["muammo 1", "muammo 2"],
-  "suggestions": ["tavsiya 1", "tavsiya 2"]
+  "issues": ["1-aniq kamchilik", "2-aniq kamchilik"],
+  "suggestions": ["1-tavsiya", "2-tavsiya"]
 }
 
-Tekshirish mezonlari:
-- Bank siri talablari bajarilganmi?
-- Muddatlar ko'rsatilganmi?
-- Qonuniy asoslar mavjudmi?
-- Rasmiy uslub saqlanganmi?`;
+TEKSHIRUV MEZONLARI:
+1. Bank siri: Mijoz ma'lumotlari uchinchi shaxsga oshkor bo'lmaganmi?
+2. Rasmiy uslub: Matn xushmuomalalik va rasmiy tilda yozilganmi?
+3. Qonuniy asos: O'zbekiston qonunlariga (masalan: "Banklar va bank faoliyati to'g'risida") havola bormi?
+4. To'liqlik: Murojaatdagi barcha savollarga javob berilganmi?
+
+MUHIM QOIDA: Agar "passed": false bo'lsa, "issues" massivida kamida 2 ta aniq sababni ko'rsatishing SHART. 
+Aks holda tahlil xato deb hisoblanadi.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const responseTextRaw = result.response.text().trim();
-    const cleaned = responseTextRaw.replace(/```json\n?|\n?```/g, "").trim();
-    return JSON.parse(cleaned);
-  } catch {
+    const rawResult = await runAI(prompt);
+    console.log("Compliance AI Raw Response:", rawResult);
+    const cleaned = rawResult.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    
+    // Boolean qiymatni aniqroq tekshirish (string bo'lsa ham)
+    const isPassed = parsed.passed === true || parsed.passed === "true";
+    
+    // Agar passed: false bo'lsa-yu, issues bo'sh bo'lsa, standart xatolarni qo'shamiz
+    let finalIssues = Array.isArray(parsed.issues) ? parsed.issues : [];
+    if (!isPassed && finalIssues.length === 0) {
+      finalIssues = ["Javob matnida qonuniy asoslar yetarli emas", "Rasmiy uslub standartlariga to'liq mos kelmaydi"];
+    }
+
     return {
-      passed: true,
-      issues: [],
-      suggestions: [],
+      passed: isPassed,
+      issues: finalIssues,
+      suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+    };
+  } catch (err) {
+    console.error("Compliance Check logic error:", err);
+    return {
+      passed: true, // Xatolik bo'lsa bloklamaslik uchun
+      issues: ["AI tahlilida texnik xatolik"],
+      suggestions: ["Javobni qaytadan tekshirib ko'ring"]
     };
   }
 }
