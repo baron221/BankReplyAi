@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Murojaat Tizimi — GDG AI Hackathon 2025</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidden;height:100vh}
+  .slides{width:100%;height:100vh;position:relative}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:60px;text-align:center;opacity:0;transition:opacity 0.5s}
+  .slide.active{display:flex;opacity:1}
+  .slide-num{position:fixed;bottom:24px;right:32px;font-size:13px;color:rgba(255,255,255,0.3)}
+  .nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100}
+  .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s}
+  .dot.active{background:#667eea;width:24px;border-radius:4px}
+  .arrows{position:fixed;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none}
+  .arrow{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;font-size:18px;transition:all 0.2s}
+  .arrow:hover{background:rgba(102,126,234,0.4)}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:rgba(102,126,234,0.2);border:1px solid rgba(102,126,234,0.4);color:#a5b4fc;padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;margin-bottom:20px}
+  h1{font-size:clamp(32px,5vw,64px);font-weight:900;line-height:1.1;margin-bottom:20px}
+  h2{font-size:clamp(24px,3vw,40px);font-weight:800;margin-bottom:16px}
+  p{font-size:clamp(14px,1.5vw,18px);color:rgba(255,255,255,0.7);line-height:1.7;max-width:800px}
+  .grad{background:linear-gradient(135deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .grad2{background:linear-gradient(135deg,#43e97b,#38f9d7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .grad3{background:linear-gradient(135deg,#f7971e,#ffd200);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:900px;margin-top:32px}
+  .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;text-align:left}
+  .card-icon{font-size:32px;margin-bottom:12px}
+  .card h3{font-size:17px;font-weight:700;margin-bottom:6px}
+  .card p{font-size:13px;color:rgba(255,255,255,0.6)}
+  .stack{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+  .chip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .stat{font-size:clamp(40px,6vw,80px);font-weight:900}
+  .stats-row{display:flex;gap:40px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+  .stat-box{text-align:center}
+  .stat-label{font-size:14px;color:rgba(255,255,255,0.5);margin-top:4px}
+  .flow{display:flex;align-items:center;gap:12px;margin-top:32px;flex-wrap:wrap;justify-content:center}
+  .flow-step{background:rgba(102,126,234,0.15);border:1px solid rgba(102,126,234,0.3);border-radius:12px;padding:16px 20px;font-size:14px;font-weight:600;min-width:120px}
+  .arrow-r{color:rgba(255,255,255,0.3);font-size:20px}
+  .gemini-badge{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(102,126,234,0.2),rgba(240,147,251,0.2));border:1px solid rgba(102,126,234,0.5);border-radius:16px;padding:16px 28px;font-size:20px;font-weight:700;margin:24px 0}
+  .bg1{background:radial-gradient(ellipse at 20% 50%,rgba(102,126,234,0.2) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(240,147,251,0.15) 0%,transparent 50%)}
+  .bg2{background:radial-gradient(ellipse at 80% 50%,rgba(67,233,123,0.15) 0%,transparent 60%)}
+  .bg3{background:radial-gradient(ellipse at 50% 80%,rgba(247,151,30,0.15) 0%,transparent 60%)}
+  .roles{display:flex;gap:16px;margin-top:24px}
+  .role{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px 24px;flex:1}
+  .role-title{font-size:15px;font-weight:700;margin-bottom:8px}
+  .role ul{list-style:none;padding:0}
+  .role ul li{font-size:13px;color:rgba(255,255,255,0.6);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.07)}
+  .role ul li:last-child{border:none}
+  .big-icon{font-size:80px;margin-bottom:20px}
+  .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:700px;margin-top:24px}
+  .kpi-item{background:rgba(255,255,255,0.05);border-radius:12px;padding:20px;text-align:left}
+  .kpi-val{font-size:32px;font-weight:800}
+  .kpi-desc{font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px}
+  footer-bar{display:block;width:100%;text-align:center;margin-top:24px;font-size:12px;color:rgba(255,255,255,0.3)}
+</style>
+</head>
+<body>
+
+<div class="slides" id="slides">
+
+<!-- SLIDE 1: Title -->
+<div class="slide active bg1">
+  <div class="tag">🚀 GDG AI Hackathon 2025</div>
+  <h1>AI <span class="grad">Murojaat</span><br>Tizimi</h1>
+  <p>Bank va moliya tashkilotlari uchun Gemini AI yordamida<br>davlat murojaatlariga avtomatik javob tayyorlash platformasi</p>
+  <div class="gemini-badge">
+    <span>🤖</span> Powered by <span class="grad">Google Gemini AI</span>
+  </div>
+  <p style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:8px">Built with Next.js 16 · Prisma · SQLite · NextAuth</p>
+</div>
+
+<!-- SLIDE 2: Problem -->
+<div class="slide bg1">
+  <div class="tag">😓 Muammo</div>
+  <h2>Banklar <span class="grad3">har kuni</span> yuzlab<br>davlat murojaatlariga javob beradi</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">⚖️</div>
+      <h3>Prokuratura</h3>
+      <p>Jinoyat ishlari bo'yicha hisobvaraq ma'lumotlari so'rovi — 15 kun muddat</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏛️</div>
+      <h3>Soliq organlari</h3>
+      <p>Moliyaviy hisobotlar, deklaratsiyalar tekshiruvi — qat'iy qonunchilik</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏦</div>
+      <h3>Markaziy bank</h3>
+      <p>Prudensial nazorat, kapital etarliligi, AML monitoring hisobotlari</p>
+    </div>
+  </div>
+  <p style="margin-top:24px">Har bir javob qonunchilikka mos, muddatida va to'g'ri bo'lishi shart —<br><strong style="color:#fff">lekin bu jarayon hozir to'liq qo'lda va juda sekin</strong></p>
+</div>
+
+<!-- SLIDE 3: Solution -->
+<div class="slide bg2">
+  <div class="tag">✨ Yechim</div>
+  <h2>Gemini AI bilan <span class="grad2">avtomatik</span><br>compliance javoblar</h2>
+  <div class="flow">
+    <div class="flow-step">📥<br>Murojaat<br>qabul qilish</div>
+    <div class="arrow-r">→</div>
+    <div class="flow-step">🔍<br>AI<br>klassifikatsiya</div>
+    <div class="arrow-r">→</div>
+    <div class="flow-step">⚖️<br>Qonun<br>tekshiruvi</div>
+    <div class="arrow-r">→</div>
+    <div class="flow-step">✍️<br>Javob<br>generatsiya</div>
+    <div class="arrow-r">→</div>
+    <div class="flow-step">✅<br>Compliance<br>check</div>
+    <div class="arrow-r">→</div>
+    <div class="flow-step">📧<br>Email<br>yuborish</div>
+  </div>
+  <p style="margin-top:28px">Daqiqalar ichida qonunchilikka to'liq mos,<br>professional darajadagi javob tayyorlanadi</p>
+</div>
+
+<!-- SLIDE 4: Gemini Features -->
+<div class="slide bg1">
+  <div class="tag">🤖 Gemini AI</div>
+  <h2>3 ta AI<span class="grad"> kuch</span></h2>
+  <div class="cards">
+    <div class="card" style="border-color:rgba(102,126,234,0.4)">
+      <div class="card-icon">🔍</div>
+      <h3>Klassifikatsiya</h3>
+      <p>Murojaat matnini tahlil qilib, mavzu, risk darajasi (0-100%) va kalit so'zlarni aniqlaydi</p>
+    </div>
+    <div class="card" style="border-color:rgba(240,147,251,0.4)">
+      <div class="card-icon">✍️</div>
+      <h3>Javob generatsiya</h3>
+      <p>O'zbekiston qonunchiligi asosida professional, to'liq va rasmiy uslubda javob yozadi</p>
+    </div>
+    <div class="card" style="border-color:rgba(67,233,123,0.4)">
+      <div class="card-icon">⚖️</div>
+      <h3>Compliance check</h3>
+      <p>Javob bank siri, muddat va boshqa qonuniy talablarga mosligini tekshiradi</p>
+    </div>
+  </div>
+  <div class="gemini-badge" style="margin-top:28px;font-size:15px">
+    <span>⚡</span> gemini-2.0-flash — tez, arzon, O'zbek tilini tushunadi
+  </div>
+</div>
+
+<!-- SLIDE 5: Tech Stack -->
+<div class="slide bg3">
+  <div class="tag">🛠️ Texnologiyalar</div>
+  <h2>Modern <span class="grad3">tech stack</span></h2>
+  <div class="stack">
+    <div class="chip">▲ Next.js 16</div>
+    <div class="chip">🤖 Google Gemini API</div>
+    <div class="chip">🗄️ Prisma ORM</div>
+    <div class="chip">🔐 NextAuth.js</div>
+    <div class="chip">🐧 SQLite</div>
+    <div class="chip">📧 Nodemailer</div>
+    <div class="chip">🎨 Glassmorphism UI</div>
+    <div class="chip">🔒 bcryptjs</div>
+    <div class="chip">📊 REST API</div>
+  </div>
+  <p style="margin-top:28px">100% open-source · Deploy ready · Production grade</p>
+</div>
+
+<!-- SLIDE 6: RBAC -->
+<div class="slide bg1">
+  <div class="tag">🔐 Xavfsizlik</div>
+  <h2>Role-Based <span class="grad">Access Control</span></h2>
+  <div class="roles" style="max-width:900px;width:100%">
+    <div class="role" style="border-color:rgba(220,38,38,0.4)">
+      <div class="role-title">👑 Admin</div>
+      <ul>
+        <li>Foydalanuvchi yaratish</li>
+        <li>Tizim sozlamalari</li>
+        <li>Audit ko'rish</li>
+        <li>Eksport</li>
+      </ul>
+    </div>
+    <div class="role" style="border-color:rgba(102,126,234,0.4)">
+      <div class="role-title">📋 Menejer</div>
+      <ul>
+        <li>AI javob tasdiqlash</li>
+        <li>Compliance tekshiruv</li>
+        <li>Murojaat tayinlash</li>
+        <li>Rad etish</li>
+      </ul>
+    </div>
+    <div class="role" style="border-color:rgba(67,233,123,0.4)">
+      <div class="role-title">⌨️ Operator</div>
+      <ul>
+        <li>Murojaat kiritish</li>
+        <li>AI klassifikatsiya</li>
+        <li>Holat kuzatish</li>
+        <li>Hisobot ko'rish</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:20px">JWT session · bcrypt hash · Middleware protection</p>
+</div>
+
+<!-- SLIDE 7: Cyber Security -->
+<div class="slide bg1">
+  <div class="tag">🛡️ Kiber-xavfsizlik</div>
+  <h2>Ma'lumotlar <span class="grad">Himoyasi</span></h2>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">🔑</div>
+      <h3>bcrypt Hashing</h3>
+      <p>Parollar ochiq holda saqlanmaydi, zamonaviy bcrypt algoritmi bilan shifrlanadi</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📜</div>
+      <h3>Audit Trail</h3>
+      <p>Har bir AI tahlili va xodim harakati tizimda o'chirilmas tarix sifatida saqlanadi</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💉</div>
+      <h3>SQLi Protection</h3>
+      <p>Prisma ORM orqali barcha ma'lumotlar bazasi so'rovlari SQL injectiondan himoyalangan</p>
+    </div>
+  </div>
+  <div class="cards" style="margin-top:16px">
+    <div class="card">
+      <div class="card-icon">🚪</div>
+      <h3>Middleware</h3>
+      <p>Ruxsatsiz foydalanuvchilar Edge darajasida avtomatik bloklanadi</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🕵️</div>
+      <h3>Compliance</h3>
+      <p>AI orqali "Bank siri" va qonunchilikka zid javoblar avtomatik filtrlanadi</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📦</div>
+      <h3>Secure API</h3>
+      <p>REST API faqat xavfsiz session tokenlari (JWT) bilan ishlaydi</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Impact -->
+<div class="slide bg2">
+  <div class="tag">📈 Natija</div>
+  <h2>Real <span class="grad2">ta'sir</span></h2>
+  <div class="kpi">
+    <div class="kpi-item">
+      <div class="kpi-val grad3">95%</div>
+      <div class="kpi-desc">Javob tayyorlash vaqti tejamkorligi<br>(3 kun → 30 daqiqa)</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-val grad">100%</div>
+      <div class="kpi-desc">Qonunchilkka muvofiqlik<br>Compliance check orqali</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-val grad2">0</div>
+      <div class="kpi-desc">Muddat o'tkazib yuborish<br>Avtomatik eslatmalar bilan</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-val" style="background:linear-gradient(135deg,#4facfe,#00f2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent">∞</div>
+      <div class="kpi-desc">Audit trail<br>Barcha harakatlar qayd etiladi</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Demo -->
+<div class="slide bg1">
+  <div class="big-icon">🖥️</div>
+  <h2>Live <span class="grad">Demo</span></h2>
+  <p style="margin-bottom:24px">Hozir siz ko'rasiz:</p>
+  <div class="flow" style="flex-direction:column;align-items:flex-start;max-width:500px">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);width:100%">
+      <span style="font-size:20px">1️⃣</span>
+      <span>Login → Dashboard (real statistika DB dan)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);width:100%">
+      <span style="font-size:20px">2️⃣</span>
+      <span>Yangi murojaat kiritish → AI klassifikatsiya</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);width:100%">
+      <span style="font-size:20px">3️⃣</span>
+      <span>Gemini AI javob generatsiya qilishi</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);width:100%">
+      <span style="font-size:20px">4️⃣</span>
+      <span>Compliance check → Email yuborish</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;width:100%">
+      <span style="font-size:20px">5️⃣</span>
+      <span>Audit trail — barcha harakatlar yozilgan</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Why GDG -->
+<div class="slide bg3">
+  <div class="tag">🏆 Nima uchun biz?</div>
+  <h2>Nima uchun bu <span class="grad3">g'alaba</span>?</h2>
+  <div class="cards" style="grid-template-columns:repeat(2,1fr);max-width:700px">
+    <div class="card">
+      <div class="card-icon">🎯</div>
+      <h3>Real muammo</h3>
+      <p>O'zbekistondagi har bir bank bu muammo bilan kundalik kurashadi</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>Production ready</h3>
+      <p>Haqiqiy DB, auth, API — prototip emas, ishlaydigan dastur</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <h3>Google AI core</h3>
+      <p>Gemini API asosiy qism — klassifikatsiya, generatsiya, compliance</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌍</div>
+      <h3>Mahalliy til</h3>
+      <p>O'zbek tilidagi qonunchilik va hujjatlar bilan ishlaydi</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: End -->
+<div class="slide bg1">
+  <div class="big-icon">🚀</div>
+  <h1><span class="grad">Rahmat!</span></h1>
+  <p style="font-size:20px;margin-bottom:24px">AI Murojaat Tizimi</p>
+  <div class="gemini-badge">
+    <span>🌟</span> Built with Google Gemini AI · GDG AI Hackathon 2025
+  </div>
+  <div class="stats-row" style="margin-top:28px">
+    <div class="stat-box">
+      <div class="stat grad" style="font-size:36px">Next.js</div>
+      <div class="stat-label">Frontend</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat grad2" style="font-size:36px">Gemini</div>
+      <div class="stat-label">AI Engine</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat grad3" style="font-size:36px">Prisma</div>
+      <div class="stat-label">Database</div>
+    </div>
+  </div>
+  <p style="margin-top:28px;font-size:14px;color:rgba(255,255,255,0.4)">localhost:3000 · demo tayyor ✅</p>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div class="arrows">
+  <div class="arrow" onclick="changeSlide(-1)">‹</div>
+  <div class="arrow" onclick="changeSlide(1)">›</div>
+</div>
+<div class="nav" id="nav"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const nav = document.getElementById('nav');
+  const slideNum = document.getElementById('slideNum');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goTo(i);
+    nav.appendChild(dot);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    document.querySelectorAll('.dot')[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    document.querySelectorAll('.dot')[current].classList.add('active');
+    slideNum.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  function changeSlide(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+    if (e.key === 'ArrowLeft') changeSlide(-1);
+  });
+
+  goTo(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         String      @default("operator") // admin | menejer | operator
+  department   String      @default("")
+  createdAt    DateTime    @default(now())
+  inquiries    Inquiry[]   @relation("AssignedInquiries")
+}
+
+model Inquiry {
+  id              String       @id @default(cuid())
+  displayId       String       @unique // INQ-2024-001 format
+  title           String
+  orgType         String       // prokuratura | soliq | markaziy_bank | davlat
+  orgName         String
+  orgEmail        String       @default("")
+  receivedDate    String
+  deadline        String
+  status          String       @default("yangi")
+  riskLevel       String       @default("o'rta")
+  topic           String       @default("")
+  description     String
+  fileName        String       @default("")
+  assignedTo      User?        @relation("AssignedInquiries", fields: [assignedToId], references: [id])
+  assignedToId    String?
+  aiResponse      String       @default("")
+  aiKeywords      String       @default("") // JSON string
+  aiRiskScore     Int          @default(0)
+  compliancePassed Boolean     @default(false)
+  complianceIssues String      @default("") // JSON string
+  complianceLaws  String       @default("") // JSON string
+  version         Int          @default(1)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  auditEntries    AuditEntry[]
+}
+
+model AuditEntry {
+  id          String    @id @default(cuid())
+  inquiry     Inquiry   @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiryId   String
+  timestamp   DateTime  @default(now())
+  action      String
+  userName    String
+  userRole    String
+  details     String    @default("")
+}
+
+model LegalDoc {
+  id           String   @id @default(cuid())
+  title        String
+  docType      String   // qonun | farmon | nizom | yo'riqnoma
+  number       String
+  date         String
+  relevantOrgs String   // JSON array string
+  summary      String
+  fullText     String   @default("")
+}
