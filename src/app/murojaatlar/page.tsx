@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/TopBar";
+import { useLanguage } from "@/components/LanguageContext";
 import { ORG_LABELS, STATUS_LABELS, RISK_LABELS } from "@/lib/mock-data";
 import { Plus, Search, Filter, Eye } from "lucide-react";
 
@@ -21,6 +22,7 @@ type Inquiry = {
 
 export default function MurojaatlarPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -73,9 +75,9 @@ export default function MurojaatlarPage() {
 
   return (
     <>
-      <TopBar title="Murojaatlar" subtitle={`${inquiries.length} ta murojaat`}>
+      <TopBar title={t("inquiries")} subtitle={`${inquiries.length} ${t("results")}`}>
         <Link href="/murojaatlar/yangi" className="btn btn-primary" id="add-murojaat-btn">
-          <Plus size={15} /> Yangi
+          <Plus size={15} /> {t("newInquiry")}
         </Link>
       </TopBar>
 
@@ -85,7 +87,7 @@ export default function MurojaatlarPage() {
             <Search size={14} className="search-icon" />
             <input
               className="form-input"
-              placeholder="ID, mavzu yoki tashkilot bo'yicha..."
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ paddingLeft: 36 }}
@@ -93,22 +95,22 @@ export default function MurojaatlarPage() {
             />
           </div>
           <select className="form-input" style={{ width: "auto" }} value={orgFilter} onChange={e => setOrgFilter(e.target.value)} id="org-filter">
-            <option value="all">Barcha tashkilotlar</option>
+            <option value="all">{t("allOrgs")}</option>
             {Object.entries(ORG_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <select className="form-input" style={{ width: "auto" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)} id="status-filter">
-            <option value="all">Barcha statuslar</option>
+            <option value="all">{t("allStatus")}</option>
             {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <select className="form-input" style={{ width: "auto" }} value={riskFilter} onChange={e => setRiskFilter(e.target.value)} id="risk-filter">
-            <option value="all">Barcha risk</option>
-            <option value="yuqori">Yuqori</option>
-            <option value="o'rta">O&apos;rta</option>
-            <option value="past">Past</option>
+            <option value="all">{t("allRisks")}</option>
+            <option value="yuqori">{t("high")}</option>
+            <option value="o'rta">{t("medium")}</option>
+            <option value="past">{t("low")}</option>
           </select>
           <span style={{ fontSize: 13, color: "var(--color-muted)", marginLeft: "auto" }}>
             <Filter size={13} style={{ display: "inline", marginRight: 4 }} />
-            {inquiries.length} natija
+            {inquiries.length} {t("results")}
           </span>
         </div>
 
@@ -116,7 +118,7 @@ export default function MurojaatlarPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th><th>Mavzu</th><th>Tashkilot</th><th>Bo'lim</th><th>Holat</th><th>Risk</th><th>Muddat</th><th>Versiya</th><th></th>
+                <th>ID</th><th>{t("topic")}</th><th>{t("org")}</th><th>{t("department")}</th><th>{t("status")}</th><th>{t("risk")}</th><th>{t("deadline")}</th><th>{t("version")}</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -129,7 +131,7 @@ export default function MurojaatlarPage() {
                   </tr>
                 ))
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign: "center", padding: "40px", color: "var(--color-muted)" }}>Hech qanday natija topilmadi</td></tr>
+                <tr><td colSpan={9} style={{ textAlign: "center", padding: "40px", color: "var(--color-muted)" }}>{t("noResults")}</td></tr>
               ) : inquiries.map(inq => (
                 <tr 
                   key={inq.id} 

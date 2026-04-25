@@ -36,10 +36,10 @@ export default function TopBar({ title, subtitle, children }: TopBarProps) {
         <button className="icon-btn" title={t("refresh")}>
           <RefreshCw size={15} />
         </button>
-        <button className="icon-btn" title="Qidiruv">
+        <button className="icon-btn" title={t("search")}>
           <Search size={15} />
         </button>
-        <button className="icon-btn" title="Bildirishnomalar">
+        <button className="icon-btn" title={t("notifications")}>
           <Bell size={15} />
           <span className="notif-dot" />
         </button>

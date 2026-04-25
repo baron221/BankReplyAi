@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
+import { useLanguage } from "@/components/LanguageContext";
 import { ORG_LABELS, STATUS_LABELS, RISK_LABELS } from "@/lib/mock-data";
 import { FileText, Clock, CheckCircle, AlertTriangle, Plus, TrendingUp, Building2, Scale, Landmark, Paperclip } from "lucide-react";
 
@@ -26,24 +27,35 @@ type RecentInquiry = {
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useLanguage();
   const map: Record<string, string> = {
     yangi: "badge-yangi", jarayonda: "badge-jarayonda", tekshiruv: "badge-tekshiruv",
     tasdiqlangan: "badge-tasdiqlangan", rad_etilgan: "badge-rad", yuborilgan: "badge-yuborilgan",
   };
-  return <span className={`badge ${map[status] || "badge-yangi"}`}>{STATUS_LABELS[status as keyof typeof STATUS_LABELS] || status}</span>;
+  // We should add these to translations too
+  const labelMap: Record<string, string> = {
+    yangi: "Yangi", jarayonda: "Jarayonda", tekshiruv: "Tekshiruv",
+    tasdiqlangan: "Tasdiqlangan", rad_etilgan: "Rad etilgan", yuborilgan: "Yuborilgan"
+  };
+  return <span className={`badge ${map[status] || "badge-yangi"}`}>{t(status) || labelMap[status] || status}</span>;
 }
 
 function RiskBadge({ risk }: { risk: string }) {
+  const { t } = useLanguage();
   const map: Record<string, string> = { yuqori: "badge-yuqori", "o'rta": "badge-orta", "oʻrta": "badge-orta", past: "badge-past" };
-  return <span className={`badge ${map[risk] || "badge-orta"}`}>{RISK_LABELS[risk as keyof typeof RISK_LABELS] || risk}</span>;
+  const labelKeyMap: Record<string, string> = { yuqori: "high", "o'rta": "medium", "oʻrta": "medium", past: "low" };
+  return <span className={`badge ${map[risk] || "badge-orta"}`}>{t(risk) || t(labelKeyMap[risk]) || risk}</span>;
 }
 
 function OrgBadge({ orgType }: { orgType: string }) {
+  const { t } = useLanguage();
   const map: Record<string, string> = { prokuratura: "badge-prokuratura", soliq: "badge-soliq", markaziy_bank: "badge-mb", davlat: "badge-davlat" };
-  return <span className={`badge ${map[orgType] || "badge-davlat"}`}>{ORG_LABELS[orgType as keyof typeof ORG_LABELS] || orgType}</span>;
+  const labelKeyMap: Record<string, string> = { prokuratura: "prokuratura", soliq: "soliq", markaziy_bank: "mb", davlat: "davlat" };
+  return <span className={`badge ${map[orgType] || "badge-davlat"}`}>{t(orgType) || t(labelKeyMap[orgType]) || orgType}</span>;
 }
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<StatData | null>(null);
   const [recent, setRecent] = useState<RecentInquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,9 +79,9 @@ export default function Dashboard() {
 
   return (
     <>
-      <TopBar title="Dashboard" subtitle="Umumiy holat va statistika">
+      <TopBar title={t("dashboard")} subtitle={t("allTime")}>
         <Link href="/murojaatlar/yangi" className="btn btn-primary" id="new-inquiry-btn">
-          <Plus size={15} /> Yangi Murojaat
+          <Plus size={15} /> {t("newInquiry")}
         </Link>
       </TopBar>
 
@@ -90,26 +102,26 @@ export default function Dashboard() {
             <div className="stat-card stat-blue">
               <div className="stat-card-icon"><FileText size={20} /></div>
               <div className="stat-card-value">{stats?.total ?? 0}</div>
-              <div className="stat-card-label">Jami murojaatlar</div>
-              <div className="stat-card-change" style={{ color: "#3b82f6" }}><TrendingUp size={12} /> Barcha davr</div>
+              <div className="stat-card-label">{t("allInquiries")}</div>
+              <div className="stat-card-change" style={{ color: "#3b82f6" }}><TrendingUp size={12} /> {t("allTime")}</div>
             </div>
             <div className="stat-card stat-purple">
               <div className="stat-card-icon"><Clock size={20} /></div>
               <div className="stat-card-value">{stats?.yangi ?? 0}</div>
-              <div className="stat-card-label">Yangi (kutilmoqda)</div>
-              <div className="stat-card-change" style={{ color: "#7c3aed" }}>Tez yordam kerak</div>
+              <div className="stat-card-label">{t("newPending")}</div>
+              <div className="stat-card-change" style={{ color: "#7c3aed" }}>{t("needHelp")}</div>
             </div>
             <div className="stat-card stat-green">
               <div className="stat-card-icon"><CheckCircle size={20} /></div>
               <div className="stat-card-value">{stats?.yuborilgan ?? 0}</div>
-              <div className="stat-card-label">Yuborilgan javoblar</div>
-              <div className="stat-card-change" style={{ color: "#16a34a" }}>Muvaffaqiyatli</div>
+              <div className="stat-card-label">{t("sentResponses")}</div>
+              <div className="stat-card-change" style={{ color: "#16a34a" }}>{t("success")}</div>
             </div>
             <div className="stat-card stat-red">
               <div className="stat-card-icon"><AlertTriangle size={20} /></div>
               <div className="stat-card-value">{stats?.muddatOtgan ?? 0}</div>
-              <div className="stat-card-label">Muddat o&apos;tgan</div>
-              <div className="stat-card-change" style={{ color: "#dc2626" }}>Zudlik bilan!</div>
+              <div className="stat-card-label">{t("overdue")}</div>
+              <div className="stat-card-change" style={{ color: "#dc2626" }}>{t("urgent")}</div>
             </div>
           </div>
         )}
@@ -117,8 +129,8 @@ export default function Dashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
           <div className="card">
             <div className="card-header">
-              <span className="card-title">So&apos;nggi murojaatlar</span>
-              <Link href="/murojaatlar" className="btn btn-outline btn-sm">Barchasi →</Link>
+              <span className="card-title">{t("recentInquiries")}</span>
+              <Link href="/murojaatlar" className="btn btn-outline btn-sm">{t("viewAll")} →</Link>
             </div>
             <table className="data-table">
               <thead>
@@ -126,7 +138,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {recent.length === 0 && !loading ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--color-muted)" }}>Ma&apos;lumot yo&apos;q</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--color-muted)" }}>{t("noData")}</td></tr>
                 ) : recent.map(inq => (
                   <tr key={inq.id}>
                     <td>
@@ -150,12 +162,12 @@ export default function Dashboard() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="card">
-              <div className="card-header"><span className="card-title">Tashkilot bo&apos;yicha</span></div>
+              <div className="card-header"><span className="card-title">{t("byOrg")}</span></div>
               <div className="card-body" style={{ paddingTop: 16 }}>
                 {[
-                  { label: "Prokuratura", count: orgCounts.prokuratura, icon: Scale, color: "#dc2626" },
-                  { label: "Soliq organi", count: orgCounts.soliq, icon: Building2, color: "#c2410c" },
-                  { label: "Markaziy bank", count: orgCounts.markaziy_bank, icon: Landmark, color: "#7c3aed" },
+                  { label: t("prokuratura"), count: orgCounts.prokuratura, icon: Scale, color: "#dc2626" },
+                  { label: t("soliq"), count: orgCounts.soliq, icon: Building2, color: "#c2410c" },
+                  { label: t("mb"), count: orgCounts.markaziy_bank, icon: Landmark, color: "#7c3aed" },
                 ].map(({ label, count, icon: Icon, color }) => (
                   <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 8, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -175,16 +187,16 @@ export default function Dashboard() {
             </div>
 
             <div className="card">
-              <div className="card-header"><span className="card-title">Tezkor amallar</span></div>
+              <div className="card-header"><span className="card-title">{t("quickActions")}</span></div>
               <div className="card-body" style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                 <Link href="/murojaatlar/yangi" className="btn btn-primary" style={{ justifyContent: "center" }}>
-                  <Plus size={15} /> Yangi murojaat kiritish
+                  <Plus size={15} /> {t("newInquiry")}
                 </Link>
                 <Link href="/murojaatlar" className="btn btn-outline" style={{ justifyContent: "center" }}>
-                  <FileText size={15} /> Barcha murojaatlar
+                  <FileText size={15} /> {t("inquiries")}
                 </Link>
                 <Link href="/hisobotlar" className="btn btn-ghost" style={{ justifyContent: "center" }}>
-                  Audit hisoboti →
+                  {t("reports")} →
                 </Link>
               </div>
             </div>
