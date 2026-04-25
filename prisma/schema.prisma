@@ -30,12 +30,14 @@ model Inquiry {
   riskLevel       String       @default("o'rta")
   topic           String       @default("")
   description     String
+  department      String       @default("Yuridik") // AI aniqlagan bo'lim
   fileName        String       @default("")
   assignedTo      User?        @relation("AssignedInquiries", fields: [assignedToId], references: [id])
   assignedToId    String?
   aiResponse      String       @default("")
   aiKeywords      String       @default("") // JSON string
   aiSummary       String       @default("")
+  aiMissingDocs   String       @default("") // JSON string
   aiRiskScore     Int          @default(0)
   compliancePassed Boolean     @default(false)
   complianceIssues String      @default("") // JSON string

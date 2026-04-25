@@ -18,13 +18,30 @@ export default function YangiMurojaatPage() {
   } | null>(null);
   const [savedInquiry, setSavedInquiry] = useState<{ displayId: string } | null>(null);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = (reader.result as string).split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStep("classifying");
 
     try {
-      // 1. Save inquiry to DB
-      const saveRes = await fetch("/api/inquiries", {
+      let fileBase64 = "";
+      if (form.file) {
+        fileBase64 = await fileToBase64(form.file);
+      }
+
+      // 1. Register and Classify in one call
+      const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -35,41 +52,27 @@ export default function YangiMurojaatPage() {
           description: form.description,
           deadline: form.deadline,
           fileName: form.file?.name || "",
+          fileBase64: fileBase64, // Yangi maydon
         }),
       });
 
-      if (!saveRes.ok) throw new Error("Saqlashda xatolik");
-      const inquiry = await saveRes.json();
+      const inquiry = await res.json();
+      if (!res.ok) throw new Error(inquiry.details || inquiry.error || "Registratsiyada xatolik");
+      
       setSavedInquiry(inquiry);
-
-      // 2. AI classification (saves to DB too)
-      const classRes = await fetch("/api/classify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: form.description,
-          orgType: form.orgType,
-          inquiryId: inquiry.displayId,
-        }),
+      setClassification({
+        topic: inquiry.topic,
+        riskScore: inquiry.aiRiskScore,
+        keywords: JSON.parse(inquiry.aiKeywords || "[]"),
+        summary: inquiry.aiSummary,
+        department: inquiry.department,
       });
-
-      if (classRes.ok) {
-        const data = await classRes.json();
-        setClassification(data);
-      } else {
-        setClassification({ topic: "Klassifikatsiya (demo)", riskScore: 65, keywords: ["murojaat", "bank", form.orgType] });
-      }
-    } catch {
-      if (savedInquiry) {
-        setClassification({ topic: "Saqlandi (AI xato)", riskScore: 50, keywords: ["murojaat"] });
-      } else {
-        setStep("form");
-        alert("Xatolik yuz berdi. Qayta urinib ko'ring.");
-        return;
-      }
+      setStep("done");
+    } catch (err: any) {
+      console.error(err);
+      setStep("form");
+      alert("Xatolik yuz berdi: " + err.message);
     }
-
-    setStep("done");
   };
 
   if (step === "classifying") {
@@ -112,9 +115,13 @@ export default function YangiMurojaatPage() {
                   </div>
                 </div>
                 <div style={{ display: "grid", gap: 14 }}>
-                  <div>
+                   <div>
                     <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Mavzu</div>
                     <div style={{ fontWeight: 600 }}>{classification.topic}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Yo'naltirilgan bo'lim</div>
+                    <div style={{ fontWeight: 600, color: "var(--color-primary)" }}>{classification.department}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 6 }}>Risk darajasi: {classification.riskScore}%</div>

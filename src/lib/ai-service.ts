@@ -17,6 +17,8 @@ export interface ClassificationResult {
   keywords: string[];
   orgType: string;
   summary: string;
+  department: string;
+  missingDocs: string[]; // Yangi maydon
   draftResponse?: string;
 }
 
@@ -42,8 +44,9 @@ async function runAI(prompt: string) {
       console.warn(`Model ${modelName} xatolik berdi: ${err.status || err.message}`);
       
       // Agar 503 (Band) bo'lsa, juda qisqa kutib ko'ramiz
-      if (err.status === 503 || err.message?.includes('503')) {
-        await new Promise(r => setTimeout(r, 1000));
+      if (err.status === 429 || err.status === 503) {
+        console.log(`Model band, 2 soniya kutilmoqda...`);
+        await new Promise(r => setTimeout(r, 2000));
       }
       
       // Har qanday xatoda (429, 403, 503) keyingi modelga o'tib ketaveramiz
@@ -55,9 +58,10 @@ async function runAI(prompt: string) {
 
 // ─── Classify Inquiry ─────────────────────────────────────────────────────────
 
-export async function classifyInquiry(text: string): Promise<ClassificationResult> {
+export async function classifyInquiry(text: string, fileBase64?: string): Promise<ClassificationResult> {
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
-Quyidagi rasmiy murojaat matnini tahlil qil va JSON formatida qaytarish:
+Quyidagi murojaatni tahlil qil va JSON formatida qaytarish.
+Agar ilova qilingan hujjat (PDF) bo'lsa, undagi ma'lumotlarni ham hisobga ol.
 
 MUROJAAT MATNI:
 ${text}
@@ -70,14 +74,43 @@ Quyidagi JSON formatida qaytarishingiz kerak (faqat JSON, hech qanday izoh yoki 
   "keywords": ["kalit so'z 1", "kalit so'z 2", "kalit so'z 3"],
   "orgType": "prokuratura | soliq | markaziy_bank | davlat",
   "summary": "Murojaatning qisqacha mazmuni (1-2 gap)",
+  "department": "Yo'naltirilishi kerak bo'lgan bo'lim: Yuridik | Kredit | Amaliyot | IT xavfsizlik | Kadrlar | Mijozlarga xizmat ko'rsatish | Compliance",
+  "missingDocs": ["javob berish uchun zarur bo'lgan hujjat 1", "javob berish uchun zarur bo'lgan hujjat 2"],
   "draftResponse": "Murojaatga beriladigan rasmiy va qonuniy javob matni loyihasi (o'zbek tilida, rasmiy uslubda)"
-}`;
+}
+
+Javob faqat o'zbek tilida bo'lsin. missingDocs ro'yxati bank ichki jarayonlariga (masalan: shartnoma nusxasi, hisobdan ko'chirma, mijoz pasporti) asoslangan holda mantiqiy bo'lsin.`;
 
   try {
-    const responseText = await runAI(prompt);
-    console.log("AI Javobi:", responseText);
-    const cleaned = responseText.replace(/```json\n?|\n?```/g, "").trim();
-    return JSON.parse(cleaned);
+    let parts: any[] = [prompt];
+    
+    if (fileBase64) {
+      parts.push({
+        inlineData: {
+          mimeType: "application/pdf",
+          data: fileBase64
+        }
+      });
+    }
+
+    // runAI o'rniga to'g'ridan-to'g'ri model.generateContent ishlatamiz (multimodal uchun)
+    let lastError: any;
+    for (const modelName of MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(parts);
+        const responseText = result.response.text().trim();
+        console.log("AI Klassifikatsiya Javobi:", responseText);
+        const cleaned = responseText.replace(/```json\n?|\n?```/g, "").trim();
+        return JSON.parse(cleaned);
+      } catch (err) {
+        lastError = err;
+        console.warn(`Model ${modelName} multimodal xatolik:`, err);
+        continue;
+      }
+    }
+    throw lastError;
+
   } catch (err: any) {
     console.error("AI Xatosi:", err);
     return {
@@ -87,6 +120,8 @@ Quyidagi JSON formatida qaytarishingiz kerak (faqat JSON, hech qanday izoh yoki 
       keywords: ["murojaat", "bank", "ma'lumot"],
       orgType: "davlat",
       summary: "Tizimda xatolik yuz berdi.",
+      missingDocs: [],
+      department: "Yuridik",
     };
   }
 }
@@ -98,24 +133,38 @@ export async function generateResponse(
   orgName: string,
   orgType: string,
   topic: string,
-  relevantLaws: string[]
+  relevantLaws: string[],
+  meta?: {
+    inquiryId: string;
+    currentDate: string;
+    bankName: string;
+    operatorName: string;
+  }
 ): Promise<GeneratedResponse> {
   const lawsContext = relevantLaws.join("; ");
 
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
-Quyidagi murojaat asosida rasmiy va qonunchilikka mos bank javobi tayyorla.
+Quyidagi murojaat va bilimlarni o'qib, BARCHA BO'SHLIQLARI TO'LDIRILGAN, tayyor rasmiy javob xatini yarat.
+HECH QANDAY PROBEL ("_____") YOKI QAVS ICHIDAGI ESLATMALAR QOLDIRMA. O'zing berilgan ma'lumotlarga qarab to'ldir.
 
 MUROJAAT MA'LUMOTLARI:
 - Tashkilot: ${orgName} (${orgType})
 - Mavzu: ${topic}
 - Murojaat matni: ${inquiryText}
 
-QONUNCHILIK ASOSLARI:
+METAMA'LUMOTLAR (javobni to'ldirish uchun):
+- Sana: ${meta?.currentDate || new Date().toLocaleDateString("uz-UZ")}
+- Chiquvchi raqam: CH-${meta?.inquiryId || "INQ-202X"}
+- Bank nomi: "${meta?.bankName || "O'zbekiston banki"}" AT
+- Mas'ul xodim (ism-sharifi): ${meta?.operatorName || "Noma'lum xodim"}
+- Murojaatning (kirish) raqami: K-${meta?.inquiryId || "INQ"} (shu raqamli murojaatga javob)
+
+QONUNCHILIK ASOSLARI VA BILIMLAR BAZASI:
 ${lawsContext}
 
-Iltimos, quyidagi JSON formatida qaytarish (faqat JSON, hech qanday kod bloki belgisiz):
+Iltimos, faqat quyidagi JSON formatida qaytarish (faqat JSON, kod bloki belgisiz):
 {
-  "response": "To'liq rasmiy javob matni o'zbek tilida. Salom so'zi bilan boshlash, rasmiy uslubda, qonunga havola qilib, imzoga joy qoldirish kerak.",
+  "response": "To'liq rasmiy javob matni o'zbek tilida. DIQQAT: Xatda hech qanday bo'shliq qoldirmang. Sana, chiquvchi raqam, tashkilot nomi va xodim ismini albatta ishlating. Javob bilimlar bazasi asosida tuzilsin.",
   "complianceNotes": ["muvofiqlik eslatmasi 1", "muvofiqlik eslatmasi 2"],
   "referencedLaws": ["qonun 1", "qonun 2"],
   "confidence": "0-100 oralig'ida ishonch darajasi (son)"
@@ -124,8 +173,8 @@ Iltimos, quyidagi JSON formatida qaytarish (faqat JSON, hech qanday kod bloki be
 Javob:
 - Rasmiy hujjat formatida bo'lsin
 - O'zbek tilida yozilsin
-- Qonunchilikka muvofiq bo'lsin
-- Bank sirini himoya qiluvchi band bo'lsin
+- Bilimlar bazasida kelgan ma'lumotlarga qat'iy tayansin
+- Hech qanday pastki chiziq ("___") qoldirmang
 - Kirish, asosiy qism va xulosa bo'lsin`;
 
   try {
@@ -135,7 +184,7 @@ Javob:
   } catch (err) {
     console.error("AI xatosi:", err);
     return {
-      response: `${orgName}ga,\n\nSizning murojaatingiz qabul qilindi va ko'rib chiqilmoqda.\n\nHurmat bilan,\nBank rahbariyati`,
+      response: `${orgName}ga,\n\nSizning murojaatingiz qabul qilindi va ko'rib chiqilmoqda.\n\nHurmat bilan,\n${meta?.bankName || "Bank"} rahbariyati`,
       complianceNotes: ["Xatolik yuz berdi"],
       referencedLaws: relevantLaws,
       confidence: 0,

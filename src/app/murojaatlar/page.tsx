@@ -14,6 +14,7 @@ type Inquiry = {
   orgName: string;
   status: string;
   riskLevel: string;
+  department: string;
   deadline: string;
   version: number;
 };
@@ -35,10 +36,17 @@ export default function MurojaatlarPage() {
     if (statusFilter !== "all") params.set("status", statusFilter);
     if (riskFilter !== "all") params.set("riskLevel", riskFilter);
 
-    const res = await fetch(`/api/inquiries?${params}`);
-    const data = await res.json();
-    setInquiries(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/inquiries?${params}`);
+      if (!res.ok) throw new Error("API error");
+      const result = await res.json();
+      setInquiries(Array.isArray(result.data) ? result.data : []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setInquiries([]);
+    } finally {
+      setLoading(false);
+    }
   }, [search, orgFilter, statusFilter, riskFilter]);
 
   useEffect(() => {
@@ -101,20 +109,20 @@ export default function MurojaatlarPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th><th>Mavzu</th><th>Tashkilot</th><th>Holat</th><th>Risk</th><th>Muddat</th><th>Versiya</th><th></th>
+                <th>ID</th><th>Mavzu</th><th>Tashkilot</th><th>Bo'lim</th><th>Holat</th><th>Risk</th><th>Muddat</th><th>Versiya</th><th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(8)].map((_, j) => (
+                    {[...Array(9)].map((_, j) => (
                       <td key={j}><div style={{ height: 16, background: "var(--color-border)", borderRadius: 4, animation: "pulse 1.5s ease-in-out infinite" }} /></td>
                     ))}
                   </tr>
                 ))
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={8} style={{ textAlign: "center", padding: "40px", color: "var(--color-muted)" }}>Hech qanday natija topilmadi</td></tr>
+                <tr><td colSpan={9} style={{ textAlign: "center", padding: "40px", color: "var(--color-muted)" }}>Hech qanday natija topilmadi</td></tr>
               ) : inquiries.map(inq => (
                 <tr 
                   key={inq.id} 
@@ -133,6 +141,7 @@ export default function MurojaatlarPage() {
                     <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>{inq.orgName}</div>
                   </td>
                   <td><span className={`badge ${orgMap[inq.orgType] || "badge-davlat"}`}>{ORG_LABELS[inq.orgType as keyof typeof ORG_LABELS] || inq.orgType}</span></td>
+                  <td><span style={{ fontSize: 13, fontWeight: 500 }}>{inq.department}</span></td>
                   <td><span className={`badge ${statusMap[inq.status] || "badge-yangi"}`}>{STATUS_LABELS[inq.status as keyof typeof STATUS_LABELS] || inq.status}</span></td>
                   <td><span className={`badge ${riskMap[inq.riskLevel] || "badge-orta"}`}>{RISK_LABELS[inq.riskLevel as keyof typeof RISK_LABELS] || inq.riskLevel}</span></td>
                   <td>

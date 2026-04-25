@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
   // Frontend'dan kelgan qonunlar bilan birlashtirish
   const finalLaws = [...contextLaws, ...(laws || [])];
 
-  const result = await generateResponse(inquiryText, orgName, orgType, topic, finalLaws);
+  const result = await generateResponse(inquiryText, orgName, orgType, topic, finalLaws, {
+    inquiryId: inquiryId || "",
+    currentDate: new Date().toLocaleDateString("uz-UZ", { year: 'numeric', month: 'long', day: 'numeric' }),
+    bankName: "O'zbekiston banki",
+    operatorName: session.user?.name || "Noma'lum xodim"
+  });
 
   // Save to DB if inquiryId provided
   if (inquiryId) {

@@ -3,18 +3,21 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import { ORG_LABELS, STATUS_LABELS, MOCK_LEGAL_DOCS } from "@/lib/mock-data";
-import { Brain, CheckCircle, XCircle, Edit3, Send, Clock, Shield, ChevronLeft, Loader2, AlertTriangle, BookOpen, X } from "lucide-react";
+import { Brain, CheckCircle, XCircle, Edit3, Send, Clock, Shield, ChevronLeft, Loader2, AlertTriangle, BookOpen, X, Volume2, Play, Square } from "lucide-react";
 
 type AuditEntry = { id: string; timestamp: string; action: string; userName: string; userRole: string; details: string };
 type InquiryData = {
   id: string; displayId: string; title: string; orgType: string; orgName: string;
   orgEmail: string; status: string; riskLevel: string; aiRiskScore: number;
   deadline: string; receivedDate: string; description: string; topic: string;
-  aiResponse: string; aiKeywords: string; compliancePassed: boolean;
+  aiResponse: string; aiKeywords: string; aiSummary: string; aiMissingDocs: string; compliancePassed: boolean;
   complianceIssues: string; complianceLaws: string; version: number;
+  fileName: string;
   auditEntries: AuditEntry[];
   assignedTo?: { name: string };
 };
+
+
 
 export default function InquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,6 +35,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     fetch(`/api/inquiries/${id}`)
@@ -51,6 +55,54 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  const handleSpeak = () => {
+    if (!inquiry?.aiSummary) return;
+    
+    if (isSpeaking) {
+      // Har ikki turdagi ovozni ham to'xtatish
+      const audio = document.getElementById("ai-audio-element") as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    // Google Translate TTS (uz-UZ) - Barqarorroq parametr bilan
+    const text = encodeURIComponent(inquiry.aiSummary);
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${text}&tl=uz&client=gtx`;
+    
+    let audio = document.getElementById("ai-audio-element") as HTMLAudioElement;
+    if (!audio) {
+      audio = document.createElement("audio");
+      audio.id = "ai-audio-element";
+      document.body.appendChild(audio);
+    }
+    
+    audio.src = url;
+    audio.onended = () => setIsSpeaking(false);
+    
+    // Agar Google TTS ishlamay qolsa, standart brauzer ovoziga o'tish (Fallback)
+    audio.onerror = () => {
+      console.warn("Google TTS xatosi, brauzer ovoziga o'tilmoqda...");
+      const utterance = new SpeechSynthesisUtterance(inquiry.aiSummary);
+      utterance.lang = "tr-TR"; // O'zbekchaga yaqinroq turkcha aksent
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    };
+    
+    setIsSpeaking(true);
+    audio.play().catch(() => {
+      // Audio play rad etilsa (masalan, CORS), brauzer ovozidan foydalanamiz
+      const utterance = new SpeechSynthesisUtterance(inquiry.aiSummary);
+      utterance.lang = "tr-TR";
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    });
+  };
 
   const safeJSON = <T,>(str: string, fallback: T): T => {
     try { return JSON.parse(str); } catch { return fallback; }
@@ -153,7 +205,13 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
       <div className="page-body" style={{ display: "flex", justifyContent: "center", padding: 80 }}>
         <Loader2 size={36} style={{ color: "var(--color-primary)", animation: "spin 1s linear infinite" }} />
       </div>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes wave {
+          0%, 100% { height: 4px; }
+          50% { height: 16px; }
+        }
+      `}</style>
     </>
   );
 
@@ -241,6 +299,34 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Email</div><div style={{ fontWeight: 600 }}>{inquiry.orgEmail || "Ko'rsatilmagan"}</div></div>
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Mavzu</div><div style={{ fontWeight: 600 }}>{inquiry.title}</div></div>
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Tavsif</div><div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{inquiry.description}</div></div>
+                
+                {inquiry.fileName && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 8 }}>Biriktirilgan fayllar</div>
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: 12, 
+                      padding: "10px 14px", 
+                      background: "var(--bg-base)", 
+                      borderRadius: 10, 
+                      border: "1px solid var(--color-border)",
+                      width: "fit-content"
+                    }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(102,126,234,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)" }}>
+                        <BookOpen size={16} />
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{inquiry.fileName}</span>
+                        <span style={{ fontSize: 11, color: "var(--color-muted)" }}>{(Math.random() * 5 + 1).toFixed(1)} MB • PDF Hujjat</span>
+                      </div>
+                      <button className="btn btn-ghost btn-sm btn-icon" style={{ marginLeft: 12 }}>
+                        <Clock size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {inquiry.aiKeywords && safeJSON<string[]>(inquiry.aiKeywords, []).length > 0 && (
                   <div className="ai-panel">
                     <div className="ai-header" style={{ marginBottom: 12 }}>
@@ -251,8 +337,41 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                       {safeJSON<string[]>(inquiry.aiKeywords, []).map(k => <span key={k} className="badge badge-yangi">{k}</span>)}
                     </div>
                     {inquiry.aiSummary && (
-                      <div style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.6, padding: "10px 12px", background: "rgba(102,126,234,0.05)", borderRadius: 8, borderLeft: "3px solid var(--color-primary)" }}>
-                        <strong>AI Xulosasi:</strong> {inquiry.aiSummary}
+                      <div style={{ position: "relative", padding: "12px 16px", background: "rgba(102,126,234,0.06)", borderRadius: 12, borderLeft: "4px solid var(--color-primary)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                          <strong style={{ fontSize: 13, color: "var(--color-primary)" }}>AI Xulosasi (Audio):</strong>
+                          <button onClick={handleSpeak} className="btn btn-primary btn-sm btn-icon" style={{ borderRadius: "50%", width: 32, height: 32, padding: 0 }}>
+                            {isSpeaking ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" style={{ marginLeft: 2 }} />}
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 13.5, color: "var(--color-text)", lineHeight: 1.6 }}>
+                          {inquiry.aiSummary}
+                        </div>
+                        {isSpeaking && (
+                          <div style={{ display: "flex", gap: 3, marginTop: 10, height: 16, alignItems: "flex-end" }}>
+                            {[...Array(12)].map((_, i) => (
+                              <div key={i} style={{ 
+                                width: 3, 
+                                background: "var(--color-primary)", 
+                                borderRadius: 1,
+                                height: "100%",
+                                animation: `wave 0.8s ease-in-out infinite ${i * 0.1}s` 
+                              }} />
+                            ))}
+                          </div>
+                        )}
+                        {inquiry.aiMissingDocs && safeJSON<string[]>(inquiry.aiMissingDocs, []).length > 0 && (
+                          <div style={{ marginTop: 12, padding: "12px", background: "rgba(245,158,11,0.08)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.2)" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#b45309", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                              <AlertTriangle size={14} /> ⚠️ Kerakli qo'shimcha hujjatlar:
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12.5, color: "#92400e" }}>
+                              {safeJSON<string[]>(inquiry.aiMissingDocs, []).map((doc, i) => (
+                                <li key={i}>{doc}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -451,7 +570,13 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
       </div>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes wave {
+          0%, 100% { height: 4px; }
+          50% { height: 16px; }
+        }
+      `}</style>
     </>
   );
 }

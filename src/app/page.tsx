@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import { ORG_LABELS, STATUS_LABELS, RISK_LABELS } from "@/lib/mock-data";
-import { FileText, Clock, CheckCircle, AlertTriangle, Plus, TrendingUp, Building2, Scale, Landmark } from "lucide-react";
+import { FileText, Clock, CheckCircle, AlertTriangle, Plus, TrendingUp, Building2, Scale, Landmark, Paperclip } from "lucide-react";
 
 type StatData = {
   total: number;
@@ -22,6 +22,7 @@ type RecentInquiry = {
   riskLevel: string;
   status: string;
   deadline: string;
+  fileName: string;
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -51,9 +52,9 @@ export default function Dashboard() {
     Promise.all([
       fetch("/api/inquiries?stats=true").then(r => r.json()),
       fetch("/api/inquiries").then(r => r.json()),
-    ]).then(([s, inqs]) => {
+    ]).then(([s, result]) => {
       setStats(s);
-      setRecent(Array.isArray(inqs) ? inqs.slice(0, 5) : []);
+      setRecent(Array.isArray(result.data) ? result.data.slice(0, 5) : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -133,7 +134,10 @@ export default function Dashboard() {
                         {inq.displayId}
                       </Link>
                     </td>
-                    <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inq.title}</td>
+                    <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {inq.title}
+                      {inq.fileName && <Paperclip size={12} style={{ marginLeft: 6, color: "var(--color-muted)", display: "inline" }} />}
+                    </td>
                     <td><OrgBadge orgType={inq.orgType} /></td>
                     <td><RiskBadge risk={inq.riskLevel} /></td>
                     <td><StatusBadge status={inq.status} /></td>

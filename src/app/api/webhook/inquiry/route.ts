@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { classifyInquiry } from "@/lib/ai-service";
 import { detectOrgType } from "@/lib/email-service";
+import { registerInquiry } from "@/lib/inquiry-service";
 
 /**
  * POST /api/webhook/inquiry
@@ -45,38 +46,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Detect org type
+    // 1. Detect org type
     const orgType = orgEmail ? detectOrgType(orgEmail) : "davlat";
 
-    // AI Classify
-    let classification = null;
-    try {
-      classification = await classifyInquiry(
-        `Mavzu: ${title}\nTashkilot: ${orgName}\n\n${description}`
-      );
-    } catch {
-      classification = null;
-    }
-
-    // Generate inquiry ID
-    const inquiryId = `INQ-API-${Date.now()}`;
+    // 2. Register via centralized service
+    const inquiry = await registerInquiry({
+      title,
+      orgType,
+      orgName: orgName || "Noma'lum tashkilot",
+      orgEmail,
+      description,
+      deadline,
+      source: "api"
+    }, "API Integratsiyasi", "api");
 
     const result = {
       success: true,
-      inquiryId,
-      status: "yangi",
-      orgType,
-      receivedAt: new Date().toISOString(),
-      referenceNumber: referenceNumber || null,
-      aiClassification: classification,
-      message: "Murojaat muvaffaqiyatli qabul qilindi va AI tahlil qilindi",
-      links: {
-        detail: `/murojaatlar/${inquiryId}`,
-        status: `/api/webhook/inquiry/${inquiryId}/status`,
-      },
+      inquiryId: inquiry.displayId,
+      id: inquiry.id,
+      status: inquiry.status,
+      orgType: inquiry.orgType,
+      department: inquiry.department,
+      receivedAt: inquiry.createdAt,
+      message: "Murojaat muvaffaqiyatli qabul qilindi va AI tomonidan registratsiya qilindi",
     };
 
-    console.log("[API Webhook] New inquiry received:", { inquiryId, orgName, orgType, priority });
+    console.log("[API Webhook] New inquiry registered:", { inquiryId: inquiry.displayId, orgName, department: inquiry.department });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("[API Webhook] Error:", error);

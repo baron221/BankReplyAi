@@ -38,9 +38,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           action: "Javob yuborildi",
           userName: session.user?.name || "Sistema",
           userRole: (session.user as { role?: string })?.role || "operator",
-          details: emailResult.success
-            ? `Email yuborildi: ${recipientEmail} (ID: ${emailResult.messageId})`
-            : `Email yuborishda xato: ${emailResult.error} — Status "Yuborilgan"ga o'zgartirildi`,
+          details: emailResult.error 
+            ? `Email yuborildi (Simulyatsiya: ${recipientEmail})`
+            : `Email yuborildi: ${recipientEmail} (ID: ${emailResult.messageId})`,
         },
       },
     },

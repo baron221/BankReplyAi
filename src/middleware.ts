@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
   const isStatic = req.nextUrl.pathname.startsWith("/_next") || req.nextUrl.pathname === "/favicon.ico";
@@ -20,8 +20,6 @@ export async function proxy(req: NextRequest) {
 
   return NextResponse.next();
 }
-
-export default proxy;
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

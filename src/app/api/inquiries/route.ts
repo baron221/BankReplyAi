@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status") || "";
   const riskLevel = searchParams.get("riskLevel") || "";
   const statsOnly = searchParams.get("stats") === "true";
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const skip = (page - 1) * limit;
 
   const where = {
     AND: [
@@ -51,51 +54,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ total, yangi, yuborilgan, muddatOtgan, jarayonda, orgStats });
   }
 
-  const inquiries = await prisma.inquiry.findMany({
-    where,
-    include: { assignedTo: { select: { name: true, id: true } }, auditEntries: { orderBy: { timestamp: "asc" } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [inquiries, totalCount] = await Promise.all([
+    prisma.inquiry.findMany({
+      where,
+      include: { assignedTo: { select: { name: true, id: true } }, auditEntries: { orderBy: { timestamp: "asc" } } },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.inquiry.count({ where })
+  ]);
 
-  return NextResponse.json(inquiries);
+  return NextResponse.json({
+    data: inquiries,
+    pagination: {
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    }
+  });
 }
 
 // ─── POST: Yangi murojaat qo'shish ────────────────────────────────────────────
+import { registerInquiry } from "@/lib/inquiry-service";
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const { title, orgType, orgName, orgEmail, description, deadline, fileName, riskLevel } = body;
-
-  // Generate display ID
-  const count = await prisma.inquiry.count();
-  const year = new Date().getFullYear();
-  const displayId = `INQ-${year}-${String(count + 1).padStart(3, "0")}`;
-
-  const inquiry = await prisma.inquiry.create({
-    data: {
-      displayId,
-      title,
-      orgType,
-      orgName,
-      orgEmail: orgEmail || "",
-      receivedDate: new Date().toISOString().split("T")[0],
-      deadline: deadline || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      status: "yangi",
-      riskLevel: riskLevel || "o'rta",
-      description,
-      fileName: fileName || "",
-      auditEntries: {
-        create: {
-          action: "Murojaat qabul qilindi",
-          userName: session.user?.name || "Sistema",
-          userRole: (session.user as { role?: string })?.role || "operator",
-          details: "Yangi murojaat kiritildi",
-        },
-      },
-    },
-  });
-
-  return NextResponse.json(inquiry, { status: 201 });
+  try {
+    const body = await req.json();
+    const inquiry = await registerInquiry(
+      body,
+      session.user?.name || "Sistema",
+      (session.user as { role?: string })?.role || "operator"
+    );
+    return NextResponse.json(inquiry, { status: 201 });
+  } catch (error: any) {
+    console.error("[Inquiries API] Error:", error);
+    return NextResponse.json({ 
+      error: "Registratsiya qilishda xatolik", 
+      details: error.message || String(error) 
+    }, { status: 500 });
+  }
 }

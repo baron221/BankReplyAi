@@ -14,9 +14,12 @@ export default function HisobotlarPage() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/inquiries")
+    fetch("/api/inquiries?limit=1000") // Hisobotlar uchun barcha ma'lumotlarni tortamiz
       .then(r => r.json())
-      .then(data => { setInquiries(Array.isArray(data) ? data : []); setLoading(false); })
+      .then(result => { 
+        setInquiries(Array.isArray(result.data) ? result.data : []); 
+        setLoading(false); 
+      })
       .catch(() => setLoading(false));
   }, []);
 

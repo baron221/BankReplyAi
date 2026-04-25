@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, Plus, BarChart3, BookOpen, Mail, Settings, LogOut, Wifi } from "lucide-react";
+import { LayoutDashboard, FileText, Plus, BarChart3, BookOpen, Mail, Settings, LogOut, Wifi, FolderOpen } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/murojaatlar", icon: FileText, label: "Murojaatlar" },
   { href: "/murojaatlar/yangi", icon: Plus, label: "Yangi murojaat" },
+  { href: "/kanselyariya", icon: FolderOpen, label: "Kanselyariya" },
   { href: "/hisobotlar", icon: BarChart3, label: "Hisobotlar" },
   { href: "/knowledge-base", icon: BookOpen, label: "Bilim bazasi" },
   { href: "/email-inbox", icon: Mail, label: "Email Inbox" },

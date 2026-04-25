@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
           aiKeywords: JSON.stringify(result.keywords),
           aiSummary: result.summary,
           aiRiskScore: result.riskScore,
+          department: result.department || "Yuridik",
           riskLevel: result.riskScore >= 70 ? "yuqori" : result.riskScore >= 40 ? "o'rta" : "past",
           version: { increment: 1 },
           auditEntries: {
