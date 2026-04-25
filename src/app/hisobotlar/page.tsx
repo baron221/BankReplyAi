@@ -12,6 +12,11 @@ export default function HisobotlarPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetch("/api/inquiries?limit=1000") // Hisobotlar uchun barcha ma'lumotlarni tortamiz
@@ -115,7 +120,7 @@ export default function HisobotlarPage() {
               ) : allAudit.map(entry => (
                 <tr key={entry.id} className="slide-in">
                   <td style={{ fontSize: 12, color: "var(--color-muted)", whiteSpace: "nowrap" }}>
-                    {new Date(entry.timestamp).toLocaleString("uz-UZ")}
+                    {mounted ? new Date(entry.timestamp).toLocaleString("uz-UZ") : "..."}
                   </td>
                   <td>
                     <Link href={`/murojaatlar/${entry.displayId}`} style={{ fontWeight: 600, fontSize: 12.5, color: "var(--color-primary)", textDecoration: "none" }}>{entry.displayId}</Link>

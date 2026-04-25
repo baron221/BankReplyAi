@@ -27,6 +27,11 @@ export default function MurojaatlarPage() {
   const [orgFilter, setOrgFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState("all");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -54,8 +59,10 @@ export default function MurojaatlarPage() {
     return () => clearTimeout(t);
   }, [fetchData]);
 
-  const isOverdue = (deadline: string, status: string) =>
-    new Date(deadline) < new Date() && status !== "yuborilgan" && status !== "rad_etilgan";
+  const isOverdue = (deadline: string, status: string) => {
+    if (!mounted) return false;
+    return new Date(deadline) < new Date() && status !== "yuborilgan" && status !== "rad_etilgan";
+  };
 
   const statusMap: Record<string, string> = {
     yangi: "badge-yangi", jarayonda: "badge-jarayonda", tekshiruv: "badge-tekshiruv",

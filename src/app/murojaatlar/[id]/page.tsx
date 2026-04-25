@@ -318,7 +318,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div style={{ display: "flex", flexDirection: "column" }}>
                         <span style={{ fontSize: 13, fontWeight: 600 }}>{inquiry.fileName}</span>
-                        <span style={{ fontSize: 11, color: "var(--color-muted)" }}>{(Math.random() * 5 + 1).toFixed(1)} MB • PDF Hujjat</span>
+                        <span style={{ fontSize: 11, color: "var(--color-muted)" }}>2.4 MB • PDF Hujjat</span>
                       </div>
                       <button className="btn btn-ghost btn-sm btn-icon" style={{ marginLeft: 12 }}>
                         <Clock size={14} />
