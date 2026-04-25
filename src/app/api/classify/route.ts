@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { text, orgType, inquiryId } = await req.json();
-  const result = await classifyInquiry(text);
+  const { text, orgType, inquiryId, language } = await req.json();
+  const result = await classifyInquiry(text, undefined, language);
 
   // If inquiryId provided, save classification to DB
   if (inquiryId) {

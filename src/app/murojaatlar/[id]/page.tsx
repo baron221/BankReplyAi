@@ -19,8 +19,11 @@ type InquiryData = {
 
 
 
+import { useLanguage } from "@/components/LanguageContext";
+
 export default function InquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { lang, t } = useLanguage();
   const [inquiry, setInquiry] = useState<InquiryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"detail" | "ai" | "audit">("detail");
@@ -127,6 +130,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
           orgName: inquiry.orgName, orgType: inquiry.orgType, topic: inquiry.topic,
           laws: relevantLaws.map(l => `${l.title} (${l.number})`),
           inquiryId: inquiry.displayId,
+          language: lang,
         }),
       });
       if (res.ok) { const data = await res.json(); setAiResponse(data.response || ""); }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import SessionWrapper from "@/components/SessionWrapper";
+import { LanguageProvider } from "@/components/LanguageContext";
 
 export const metadata: Metadata = {
   title: "AI Murojaat Tizimi | Compliance Response System",
@@ -13,12 +14,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz">
       <body suppressHydrationWarning>
         <SessionWrapper>
-          <div className="app-layout">
-            <Sidebar />
-            <div className="main-content">
-              {children}
+          <LanguageProvider>
+            <div className="app-layout">
+              <Sidebar />
+              <div className="main-content">
+                {children}
+              </div>
             </div>
-          </div>
+          </LanguageProvider>
         </SessionWrapper>
       </body>
     </html>

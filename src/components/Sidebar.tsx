@@ -5,20 +5,23 @@ import { LayoutDashboard, FileText, Plus, BarChart3, BookOpen, Mail, Settings, L
 import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/murojaatlar", icon: FileText, label: "Murojaatlar" },
-  { href: "/murojaatlar/yangi", icon: Plus, label: "Yangi murojaat" },
-  { href: "/kanselyariya", icon: FolderOpen, label: "Kanselyariya" },
-  { href: "/hisobotlar", icon: BarChart3, label: "Hisobotlar" },
-  { href: "/knowledge-base", icon: BookOpen, label: "Bilim bazasi" },
-  { href: "/email-inbox", icon: Mail, label: "Email Inbox" },
-  { href: "/api-docs", icon: Wifi, label: "API Docs" },
-  { href: "/sozlamalar", icon: Settings, label: "Sozlamalar" },
+  { href: "/", icon: LayoutDashboard, labelKey: "dashboard" },
+  { href: "/murojaatlar", icon: FileText, labelKey: "inquiries" },
+  { href: "/murojaatlar/yangi", icon: Plus, labelKey: "newInquiry" },
+  { href: "/kanselyariya", icon: FolderOpen, labelKey: "kanselyariya" },
+  { href: "/hisobotlar", icon: BarChart3, labelKey: "reports" },
+  { href: "/knowledge-base", icon: BookOpen, labelKey: "knowledgeBase" },
+  { href: "/email-inbox", icon: Mail, labelKey: "emailInbox" },
+  { href: "/api-docs", icon: Wifi, labelKey: "apiDocs" },
+  { href: "/sozlamalar", icon: Settings, labelKey: "settings" },
 ];
+
+import { useLanguage } from "./LanguageContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const user = session?.user;
   const userRole = (user as { role?: string })?.role || "operator";
 
@@ -28,12 +31,12 @@ export default function Sidebar() {
         <div className="sidebar-logo-icon">🏛️</div>
         <div>
           <div style={{ fontWeight: 800, fontSize: 14, color: "#fff" }}>AI Murojaat</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>Tizimi</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{t("system")}</div>
         </div>
       </div>
 
       <nav className="sidebar-nav">
-        {navItems.map(({ href, icon: Icon, label }) => {
+        {navItems.map(({ href, icon: Icon, labelKey }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
@@ -76,7 +79,7 @@ export default function Sidebar() {
                 }} />
               )}
               <Icon size={16} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </Link>
           );
         })}
@@ -115,7 +118,7 @@ export default function Sidebar() {
           onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
           id="logout-btn"
         >
-          <LogOut size={14} /> Chiqish
+          <LogOut size={14} /> {t("logout")}
         </button>
       </div>
     </aside>

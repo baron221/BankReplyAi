@@ -12,6 +12,7 @@ export interface InboundInquiry {
   fileName?: string;
   fileBase64?: string; // Yangi maydon
   source?: "manual" | "email" | "api";
+  language?: "uz" | "ru";
 }
 
 /**
@@ -36,9 +37,8 @@ export async function registerInquiry(data: InboundInquiry, userName: string = "
   const displayId = `INQ-${year}-${String(nextNumber).padStart(3, "0")}`;
 
   // 2. AI orqali klassifikatsiya (Mavzu, Risk, Bo'lim aniqlash)
-  let aiResult;
   try {
-    aiResult = await classifyInquiry(data.description, data.fileBase64);
+    aiResult = await classifyInquiry(data.description, data.fileBase64, data.language || "uz");
   } catch (err) {
     console.error("[Registration] AI klassifikatsiyada xatolik:", err);
     aiResult = {

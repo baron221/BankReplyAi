@@ -5,8 +5,11 @@ import TopBar from "@/components/TopBar";
 import { ORG_LABELS } from "@/lib/mock-data";
 import { Upload, FileText, Loader2, CheckCircle, Brain, AtSign } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageContext";
+
 export default function YangiMurojaatPage() {
   const router = useRouter();
+  const { lang, t } = useLanguage();
   const [step, setStep] = useState<"form" | "classifying" | "done">("form");
   const [dragOver, setDragOver] = useState(false);
   const [form, setForm] = useState({
@@ -52,7 +55,8 @@ export default function YangiMurojaatPage() {
           description: form.description,
           deadline: form.deadline,
           fileName: form.file?.name || "",
-          fileBase64: fileBase64, // Yangi maydon
+          fileBase64: fileBase64,
+          language: lang,
         }),
       });
 

@@ -58,7 +58,8 @@ async function runAI(prompt: string) {
 
 // ─── Classify Inquiry ─────────────────────────────────────────────────────────
 
-export async function classifyInquiry(text: string, fileBase64?: string): Promise<ClassificationResult> {
+export async function classifyInquiry(text: string, fileBase64?: string, language: "uz" | "ru" = "uz"): Promise<ClassificationResult> {
+  const langName = language === "ru" ? "rus tili" : "o'zbek tili";
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
 Quyidagi murojaatni tahlil qil va JSON formatida qaytarish.
 Agar ilova qilingan hujjat (PDF) bo'lsa, undagi ma'lumotlarni ham hisobga ol.
@@ -68,18 +69,18 @@ ${text}
 
 Quyidagi JSON formatida qaytarishingiz kerak (faqat JSON, hech qanday izoh yoki kod bloki belgisiz):
 {
-  "topic": "Murojaatning asosiy mavzusi (qisqa)",
+  "topic": "Murojaatning asosiy mavzusi (qisqa, ${langName}da)",
   "deadline": "Javob berish muddati (YYYY-MM-DD formatida, agar ko'rsatilmagan bo'lsa 15 ish kunidan hisoblash)",
   "riskScore": "Risk darajasi 0-100 oralig'ida (son)",
   "keywords": ["kalit so'z 1", "kalit so'z 2", "kalit so'z 3"],
   "orgType": "prokuratura | soliq | markaziy_bank | davlat",
-  "summary": "Murojaatning qisqacha mazmuni (1-2 gap)",
+  "summary": "Murojaatning qisqacha mazmuni (1-2 gap, ${langName}da)",
   "department": "Yo'naltirilishi kerak bo'lgan bo'lim: Yuridik | Kredit | Amaliyot | IT xavfsizlik | Kadrlar | Mijozlarga xizmat ko'rsatish | Compliance",
   "missingDocs": ["javob berish uchun zarur bo'lgan hujjat 1", "javob berish uchun zarur bo'lgan hujjat 2"],
-  "draftResponse": "Murojaatga beriladigan rasmiy va qonuniy javob matni loyihasi (o'zbek tilida, rasmiy uslubda)"
+  "draftResponse": "Murojaatga beriladigan rasmiy va qonuniy javob matni loyihasi (${langName}da, rasmiy uslubda)"
 }
 
-Javob faqat o'zbek tilida bo'lsin. missingDocs ro'yxati bank ichki jarayonlariga (masalan: shartnoma nusxasi, hisobdan ko'chirma, mijoz pasporti) asoslangan holda mantiqiy bo'lsin.`;
+Javob faqat ${langName}da bo'lsin. missingDocs ro'yxati bank ichki jarayonlariga asoslangan holda mantiqiy bo'lsin.`;
 
   try {
     let parts: any[] = [prompt];
@@ -139,10 +140,12 @@ export async function generateResponse(
     currentDate: string;
     bankName: string;
     operatorName: string;
+    language?: "uz" | "ru";
   }
 ): Promise<GeneratedResponse> {
   const lawsContext = relevantLaws.join("; ");
 
+  const targetLang = meta?.language === "ru" ? "русском языке" : "o'zbek tilida";
   const prompt = `Sen O'zbekiston banki yuridik xizmati uchun sun'iy intellekt yordamchisisisan.
 Quyidagi murojaat va bilimlarni o'qib, BARCHA BO'SHLIQLARI TO'LDIRILGAN, tayyor rasmiy javob xatini yarat.
 HECH QANDAY PROBEL ("_____") YOKI QAVS ICHIDAGI ESLATMALAR QOLDIRMA. O'zing berilgan ma'lumotlarga qarab to'ldir.
@@ -164,15 +167,15 @@ ${lawsContext}
 
 Iltimos, faqat quyidagi JSON formatida qaytarish (faqat JSON, kod bloki belgisiz):
 {
-  "response": "To'liq rasmiy javob matni o'zbek tilida. DIQQAT: Xatda hech qanday bo'shliq qoldirmang. Sana, chiquvchi raqam, tashkilot nomi va xodim ismini albatta ishlating. Javob bilimlar bazasi asosida tuzilsin.",
-  "complianceNotes": ["muvofiqlik eslatmasi 1", "muvofiqlik eslatmasi 2"],
+  "response": "To'liq rasmiy javob matni ${targetLang}da. DIQQAT: Xatda hech qanday bo'shliq qoldirmang. Sana, chiquvchi raqam, tashkilot nomi va xodim ismini albatta ishlating. Javob bilimlar bazasi asosida tuzilsin.",
+  "complianceNotes": ["eslatma 1", "eslatma 2"],
   "referencedLaws": ["qonun 1", "qonun 2"],
   "confidence": "0-100 oralig'ida ishonch darajasi (son)"
 }
 
 Javob:
 - Rasmiy hujjat formatida bo'lsin
-- O'zbek tilida yozilsin
+- Faqat ${targetLang}da yozilsin
 - Bilimlar bazasida kelgan ma'lumotlarga qat'iy tayansin
 - Hech qanday pastki chiziq ("___") qoldirmang
 - Kirish, asosiy qism va xulosa bo'lsin`;

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { inquiryText, orgName, orgType, topic, laws, inquiryId } = await req.json();
+  const { inquiryText, orgName, orgType, topic, laws, inquiryId, language } = await req.json();
 
   // Bilimlar bazasidan aynan shu tashkilot turiga mos hujjatlarni qidirish
   const dbDocs = await prisma.legalDoc.findMany();
@@ -28,9 +28,10 @@ export async function POST(req: NextRequest) {
 
   const result = await generateResponse(inquiryText, orgName, orgType, topic, finalLaws, {
     inquiryId: inquiryId || "",
-    currentDate: new Date().toLocaleDateString("uz-UZ", { year: 'numeric', month: 'long', day: 'numeric' }),
-    bankName: "O'zbekiston banki",
-    operatorName: session.user?.name || "Noma'lum xodim"
+    currentDate: new Date().toLocaleDateString(language === "ru" ? "ru-RU" : "uz-UZ", { year: 'numeric', month: 'long', day: 'numeric' }),
+    bankName: language === "ru" ? "Банк Узбекистана" : "O'zbekiston banki",
+    operatorName: session.user?.name || "Noma'lum xodim",
+    language: language
   });
 
   // Save to DB if inquiryId provided
