@@ -60,6 +60,6 @@
 
 Ushbu loyiha bank sohasida byurokratiyani kamaytirish va javob xatlarining sifatini 90% ga oshirish uchun kontseptual yechim sifatida ishlab chiqilgan.
 
----
+Muallif : Bakhromjon Tulkinov
 **Muallif**: Bakhromjon Tulkinov
 **Versiya**: 1.0.0-Premium
