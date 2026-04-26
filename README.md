@@ -1,6 +1,6 @@
-# 🏛️ AI Murojaat Tizimi (Compliance & AI Response)
+# 🏛️ BankReplyAI (Compliance & AI Response)
 
-**AI Murojaat Tizimi** — bu banklar va davlat tashkilotlari uchun mo'ljallangan, sun'iy intellekt (Gemini 2.0 Flash) yordamida kiruvchi murojaatlarni tahlil qilish va ularga qonuniy asoslangan javoblar tayyorlashni avtomatlashtiruvchi premium platforma.
+**BankReplyAI** — bu banklar va davlat tashkilotlari uchun mo'ljallangan, sun'iy intellekt (Gemini 2.0 Flash) yordamida kiruvchi murojaatlarni tahlil qilish va ularga qonuniy asoslangan javoblar tayyorlashni avtomatlashtiruvchi premium platforma.
 
 ## 🚀 Asosiy Imkoniyatlar
 

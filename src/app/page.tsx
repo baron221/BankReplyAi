@@ -87,7 +87,7 @@ export default function Dashboard() {
 
       <div className="page-body fade-in">
         <div className="grad-header">
-          <h1>🏛️ AI Murojaat Tizimi</h1>
+          <h1>🏛️ BankReplyAI</h1>
           <p>Prokuratura · Soliq organlari · Markaziy bank — qonunchilikka mos javoblar</p>
         </div>
 

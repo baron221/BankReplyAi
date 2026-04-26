@@ -30,8 +30,8 @@ export default function Sidebar() {
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">🏛️</div>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 14, color: "#fff" }}>AI Murojaat</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{t("system")}</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: "-0.02em" }}>BankReply<span style={{ color: "var(--color-primary)" }}>AI</span></div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("system")}</div>
         </div>
       </div>
 
