@@ -10,7 +10,9 @@
 - **🔊 Ovozli SI Xulosasi**: Murojaat mazmunini o'zbek va rus tillarida ovozli eshitish imkoniyati.
 - **📂 Hujjatlar Analizi**: Biriktirilgan PDF fayllarni o'qish va ulardagi ma'lumotlarni hisobga olish.
 - **🌍 Ko'p tilli tizim (i18n)**: To'liq o'zbek va rus tillarida ishlash imkoniyati (interfeys + AI).
+- **🌍 Avto-tarjima (i18n AI)**: Xalqaro murojaatlarni (RU/EN) o'zbekchaga o'girish va javobni original tilga tarjima qilish.
 - **📊 Audit va Monitoring**: Tizimdagi barcha harakatlarning to'liq tarixi (Audit Log).
+- **💬 AI Copilot / Chatbot**: Har bir murojaat bo'yicha operatorga maslahat beruvchi va savollarga javob beruvchi aqlli suhbatdosh.
 
 ## 🛠 Texnik Stek
 

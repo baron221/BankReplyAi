@@ -42,6 +42,8 @@ model Inquiry {
   compliancePassed Boolean     @default(false)
   complianceIssues String      @default("") // JSON string
   complianceLaws  String       @default("") // JSON string
+  detectedLang    String       @default("uz") // uz | ru | en
+  translatedText  String       @default("")   // Murojaatning o'zbekcha tarjimasi
   version         Int          @default(1)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

@@ -3,7 +3,8 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import { ORG_LABELS, STATUS_LABELS, MOCK_LEGAL_DOCS } from "@/lib/mock-data";
-import { Brain, CheckCircle, XCircle, Edit3, Send, Clock, Shield, ChevronLeft, Loader2, AlertTriangle, BookOpen, X, Volume2, Play, Square } from "lucide-react";
+import { Brain, CheckCircle, XCircle, Edit3, Send, Download, Clock, Shield, ChevronLeft, Loader2, AlertTriangle, BookOpen, X, Volume2, Play, Square } from "lucide-react";
+import CopilotChat from "@/components/CopilotChat";
 
 type AuditEntry = { id: string; timestamp: string; action: string; userName: string; userRole: string; details: string };
 type InquiryData = {
@@ -11,13 +12,12 @@ type InquiryData = {
   orgEmail: string; status: string; riskLevel: string; aiRiskScore: number;
   deadline: string; receivedDate: string; description: string; topic: string;
   aiResponse: string; aiKeywords: string; aiSummary: string; aiMissingDocs: string; compliancePassed: boolean;
-  complianceIssues: string; complianceLaws: string; version: number;
-  fileName: string;
+  complianceIssues: string; complianceLaws: string;
+  detectedLang: string;
+  translatedText: string;
   auditEntries: AuditEntry[];
   assignedTo?: { name: string };
 };
-
-
 
 import { useLanguage } from "@/components/LanguageContext";
 
@@ -39,6 +39,11 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [isTranslatingResponse, setIsTranslatingResponse] = useState(false);
+  const [showTranslateModal, setShowTranslateModal] = useState(false);
+  const [translatedResponse, setTranslatedResponse] = useState("");
 
   useEffect(() => {
     fetch(`/api/inquiries/${id}`)
@@ -63,7 +68,6 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     if (!inquiry?.aiSummary) return;
     
     if (isSpeaking) {
-      // Har ikki turdagi ovozni ham to'xtatish
       const audio = document.getElementById("ai-audio-element") as HTMLAudioElement;
       if (audio) {
         audio.pause();
@@ -74,7 +78,6 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
       return;
     }
 
-    // Google Translate TTS (uz-UZ) - Barqarorroq parametr bilan
     const text = encodeURIComponent(inquiry.aiSummary);
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${text}&tl=uz&client=gtx`;
     
@@ -88,18 +91,16 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     audio.src = url;
     audio.onended = () => setIsSpeaking(false);
     
-    // Agar Google TTS ishlamay qolsa, standart brauzer ovoziga o'tish (Fallback)
     audio.onerror = () => {
       console.warn("Google TTS xatosi, brauzer ovoziga o'tilmoqda...");
       const utterance = new SpeechSynthesisUtterance(inquiry.aiSummary);
-      utterance.lang = "tr-TR"; // O'zbekchaga yaqinroq turkcha aksent
+      utterance.lang = "tr-TR";
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     };
     
     setIsSpeaking(true);
     audio.play().catch(() => {
-      // Audio play rad etilsa (masalan, CORS), brauzer ovozidan foydalanamiz
       const utterance = new SpeechSynthesisUtterance(inquiry.aiSummary);
       utterance.lang = "tr-TR";
       utterance.onend = () => setIsSpeaking(false);
@@ -166,17 +167,19 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     await refetch();
   };
 
-  const handleSend = async () => {
+  const handleSend = async (useOriginalLang: boolean = false) => {
     if (!inquiry || !aiResponse) return;
     setSending(true);
     try {
+      const finalResponse = useOriginalLang && translatedResponse ? translatedResponse : aiResponse;
       const res = await fetch(`/api/inquiries/${inquiry.displayId}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ responseText: finalResponse }),
       });
       if (res.ok) {
         setSendSuccess(true);
+        setShowTranslateModal(false);
         await refetch();
       } else {
         const err = await res.json();
@@ -184,6 +187,23 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
       }
     } catch { alert("Tarmoq xatoligi"); }
     setSending(false);
+  };
+
+  const handleTranslateResponse = async () => {
+    if (!inquiry || !aiResponse) return;
+    setIsTranslatingResponse(true);
+    try {
+      const res = await fetch("/api/translate-response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: aiResponse, targetLang: inquiry.detectedLang }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTranslatedResponse(data.translated);
+      }
+    } catch { /* ignore */ }
+    setIsTranslatingResponse(false);
   };
 
   const handleReject = async () => {
@@ -234,7 +254,6 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      {/* Reject Modal */}
       {showRejectModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div className="card" style={{ width: 420, padding: 0 }}>
@@ -250,6 +269,53 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                   {rejecting ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <XCircle size={13} />} Rad etish
                 </button>
                 <button className="btn btn-outline btn-sm" onClick={() => setShowRejectModal(false)}>Bekor qilish</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Translation & Send Modal */}
+      {showTranslateModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="card" style={{ width: 600, maxWidth: "90vw", padding: 0 }}>
+            <div className="card-header">
+              <span className="card-title">🌍 Xalqaro murojaat: Tarjima tahlili</span>
+              <button onClick={() => setShowTranslateModal(false)} className="btn btn-ghost btn-icon btn-sm"><X size={14} /></button>
+            </div>
+            <div className="card-body" style={{ maxHeight: "80vh", overflowY: "auto" }}>
+              <p style={{ fontSize: 13, color: "var(--color-muted)", marginBottom: 16 }}>
+                Murojaat <b>{inquiry.detectedLang.toUpperCase()}</b> tilida kelgan. Javobingizni original tilda yuborishni xohlaysizmi?
+              </p>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 4 }}>O'zbekcha (Sizning variantingiz)</div>
+                  <div style={{ fontSize: 12, padding: 12, background: "var(--bg-base)", borderRadius: 8, border: "1px solid var(--color-border)", height: 200, overflowY: "auto" }}>
+                    {aiResponse}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 4 }}>{inquiry.detectedLang.toUpperCase()} (AI Tarjimasi)</div>
+                  <div style={{ fontSize: 12, padding: 12, background: "rgba(102,126,234,0.05)", borderRadius: 8, border: "1px solid var(--color-primary)", height: 200, overflowY: "auto", position: "relative" }}>
+                    {isTranslatingResponse ? (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                        <Loader2 size={24} className="spin" style={{ color: "var(--color-primary)" }} />
+                      </div>
+                    ) : (
+                      translatedResponse || "Tarjima kutilmoqda..."
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleSend(true)} disabled={sending || !translatedResponse}>
+                  Original tilda yuborish ({inquiry.detectedLang.toUpperCase()})
+                </button>
+                <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => handleSend(false)} disabled={sending}>
+                  O'zbek tilida yuborish
+                </button>
               </div>
             </div>
           </div>
@@ -281,7 +347,6 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
           </span>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--bg-surface)", padding: 4, borderRadius: 10, width: "fit-content", border: "1px solid var(--color-border)" }}>
           {(["detail", "ai", "audit"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} id={`tab-${t}`} className="btn btn-sm" style={{
@@ -302,7 +367,25 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Tashkilot</div><div style={{ fontWeight: 600 }}>{inquiry.orgName}</div></div>
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Email</div><div style={{ fontWeight: 600 }}>{inquiry.orgEmail || "Ko'rsatilmagan"}</div></div>
                 <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Mavzu</div><div style={{ fontWeight: 600 }}>{inquiry.title}</div></div>
-                <div><div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Tavsif</div><div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{inquiry.description}</div></div>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                    <span>Tavsif</span>
+                    {inquiry.detectedLang !== 'uz' && (
+                      <span className="badge badge-yangi" style={{ fontSize: 10, textTransform: "uppercase" }}>{inquiry.detectedLang} tilida</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+                    {showTranslation && inquiry.translatedText ? inquiry.translatedText : inquiry.description}
+                  </div>
+                  {inquiry.detectedLang !== 'uz' && inquiry.translatedText && (
+                    <button 
+                      onClick={() => setShowTranslation(!showTranslation)}
+                      style={{ background: "transparent", border: "none", color: "var(--color-primary)", fontSize: 11, fontWeight: 600, padding: 0, marginTop: 4, cursor: "pointer" }}
+                    >
+                      {showTranslation ? "Originalni ko'rish ←" : "O'zbekchaga tarjima (AI) →"}
+                    </button>
+                  )}
+                </div>
                 
                 {inquiry.fileName && (
                   <div style={{ marginTop: 8 }}>
@@ -324,9 +407,15 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                         <span style={{ fontSize: 13, fontWeight: 600 }}>{inquiry.fileName}</span>
                         <span style={{ fontSize: 11, color: "var(--color-muted)" }}>2.4 MB • PDF Hujjat</span>
                       </div>
-                      <button className="btn btn-ghost btn-sm btn-icon" style={{ marginLeft: 12 }}>
-                        <Clock size={14} />
-                      </button>
+                      <a 
+                        href="/murojaat_hujjati.pdf" 
+                        download={inquiry.fileName}
+                        className="btn btn-ghost btn-sm btn-icon" 
+                        style={{ marginLeft: 12, color: "var(--color-primary)" }}
+                        title="Yuklab olish"
+                      >
+                        <Download size={14} />
+                      </a>
                     </div>
                   </div>
                 )}
@@ -581,6 +670,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
           50% { height: 16px; }
         }
       `}</style>
+      <CopilotChat inquiry={inquiry} />
     </>
   );
 }

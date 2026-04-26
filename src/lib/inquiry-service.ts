@@ -37,6 +37,7 @@ export async function registerInquiry(data: InboundInquiry, userName: string = "
   const displayId = `INQ-${year}-${String(nextNumber).padStart(3, "0")}`;
 
   // 2. AI orqali klassifikatsiya (Mavzu, Risk, Bo'lim aniqlash)
+  let aiResult;
   try {
     aiResult = await classifyInquiry(data.description, data.fileBase64, data.language || "uz");
   } catch (err) {
@@ -71,6 +72,8 @@ export async function registerInquiry(data: InboundInquiry, userName: string = "
         aiSummary: aiResult.summary || "",
         aiMissingDocs: JSON.stringify(aiResult.missingDocs || []),
         aiRiskScore: aiResult.riskScore || 0,
+        detectedLang: aiResult.detectedLang || "uz",
+        translatedText: aiResult.translatedText || "",
         auditEntries: {
           create: {
             action: "Murojaat registratsiya qilindi",

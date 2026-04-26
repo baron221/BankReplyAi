@@ -5,8 +5,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const MODELS = [
   "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash-lite",
   "gemini-2.0-flash"
 ];
 
@@ -19,6 +17,8 @@ export interface ClassificationResult {
   summary: string;
   department: string;
   missingDocs: string[]; // Yangi maydon
+  detectedLang: string;  // uz | ru | en
+  translatedText: string; // O'zbekcha tarjimasi
   draftResponse?: string;
 }
 
@@ -77,6 +77,8 @@ Quyidagi JSON formatida qaytarishingiz kerak (faqat JSON, hech qanday izoh yoki 
   "summary": "Murojaatning qisqacha mazmuni (1-2 gap, ${langName}da)",
   "department": "Yo'naltirilishi kerak bo'lgan bo'lim: Yuridik | Kredit | Amaliyot | IT xavfsizlik | Kadrlar | Mijozlarga xizmat ko'rsatish | Compliance",
   "missingDocs": ["javob berish uchun zarur bo'lgan hujjat 1", "javob berish uchun zarur bo'lgan hujjat 2"],
+  "detectedLang": "uz | ru | en (murojaat tili)",
+  "translatedText": "Agar murojaat o'zbekcha bo'lmasa, uni o'zbek tiliga professional tarjima qiling (agar o'zbekcha bo'lsa matnni o'zini qoldiring)",
   "draftResponse": "Murojaatga beriladigan rasmiy va qonuniy javob matni loyihasi (${langName}da, rasmiy uslubda)"
 }
 
@@ -123,6 +125,8 @@ Javob faqat ${langName}da bo'lsin. missingDocs ro'yxati bank ichki jarayonlariga
       summary: "Tizimda xatolik yuz berdi.",
       missingDocs: [],
       department: "Yuridik",
+      detectedLang: "uz",
+      translatedText: ""
     };
   }
 }
@@ -254,3 +258,86 @@ Aks holda tahlil xato deb hisoblanadi.`;
     };
   }
 }
+
+// ─── Copilot Chat ─────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: "user" | "model";
+  parts: { text: string }[];
+}
+
+export async function chatWithCopilot(
+  messages: ChatMessage[],
+  contextData: any
+): Promise<string> {
+  const promptContext = `
+Sen O'zbekiston bankining yuridik bo'limi operatorlariga yordam beruvchi "BankReplyAI Copilot" sun'iy intellektisan.
+Quyida senga joriy murojaat (inquiry) haqidagi kontekst berilgan. Shu ma'lumotlarga tayanib xodimning savollariga aniq, to'liq, huquqiy asoslangan va qisqa javoblar bergin.
+
+MUROJAAT KONTEKSTI:
+Tashkilot: ${contextData.orgName} (${contextData.orgType})
+Mavzu: ${contextData.topic}
+Murojaat matni: ${contextData.description}
+AI Xulosasi: ${contextData.aiSummary || 'Mavjud emas'}
+Sizning asosiy vazifangiz: Operatorga ushbu murojaat bo'yicha maslahat berish, qonunlarni eslatish va javob xatini to'g'ri shakllantirishda yordam berish.
+Javoblaringiz o'zbek tilida (yoki xodim so'ragan tilda), professionallik bilan bo'lishi kerak.
+  `.trim();
+
+  let lastError: any;
+  for (const modelName of MODELS) {
+    try {
+      console.log(`Copilot so'rovi yuborilmoqda: ${modelName}...`);
+      const model = genAI.getGenerativeModel({ 
+        model: modelName, 
+        systemInstruction: promptContext
+      });
+      
+      if (messages.length === 0) return "Assalomu alaykum! Ushbu murojaat bo'yicha qanday yordam bera olaman?";
+
+      const chat = model.startChat({
+        history: messages.slice(0, -1).map(m => ({
+          role: m.role,
+          parts: m.parts
+        }))
+      });
+
+      const result = await chat.sendMessage(messages[messages.length - 1].parts[0].text);
+      return result.response.text();
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`Copilot model ${modelName} xatolik:`, err.status || err.message);
+      
+      if (err.status === 429 || err.status === 503) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      continue;
+    }
+  }
+  
+  console.error("Copilot AI yakuniy xatosi:", lastError);
+  return "Kechirasiz, aloqada uzilish yuz berdi. Iltimos birozdan so'ng qayta urinib ko'ring.";
+}
+
+// ─── Translate Response ────────────────────────────────────────────────────────
+
+export async function translateResponse(
+  text: string,
+  targetLang: "ru" | "en" | "uz"
+): Promise<string> {
+  const langName = targetLang === "ru" ? "rus tili" : targetLang === "en" ? "ingliz tili" : "o'zbek tili";
+  const prompt = `Quyidagi bank rasmiy javob matnini professional va rasmiy ${langName}ga o'girib ber. 
+Hech qanday izohsiz, faqat tarjima matnini qaytar.
+
+MATN:
+${text}`;
+
+  try {
+    return await runAI(prompt);
+  } catch (err) {
+    console.error("Translation Error:", err);
+    return text; // Xatolik bo'lsa matnni o'zini qaytarish
+  }
+}
+
+
