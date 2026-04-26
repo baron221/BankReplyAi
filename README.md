@@ -16,7 +16,7 @@
 
 - **Frontend**: Next.js 15 (App Router), React, TailwindCSS (Glassmorphism UI).
 - **Backend**: Next.js Serverless Functions.
-- **AI**: Google Gemini 2.0 Flash API.
+- **AI**: Google Gemini 2.5 Flash API.
 - **Database**: Prisma + SQLite (Better-SQLite3).
 - **Authentication**: Next-Auth.js.
 - **Icons**: Lucide React.
