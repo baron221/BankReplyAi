@@ -225,6 +225,68 @@ async function main() {
     console.log(`✅ Yaratildi: ${created.displayId}`);
   }
 
+  const legalDocs = [
+    {
+      title: "Oʻzbekiston Respublikasi Markaziy banki toʻgʻrisidagi Qonun",
+      docType: "qonun",
+      number: "№ ZRU-598",
+      date: "2019-11-11",
+      relevantOrgs: JSON.stringify(["markaziy_bank"]),
+      summary: "Markaziy bankning vazifalari, huquqlari va majburiyatlarini belgilaydi. Bankka nisbatan nazorat va tekshiruvlar tartibini tartibga soladi.",
+      fullText: "O'zbekiston Respublikasining Markaziy banki to'g'risidagi Qonuni bank tizimining barqarorligini ta'minlash, narxlar barqarorligini saqlash va to'lov tizimlarini rivojlantirishning huquqiy asoslarini belgilaydi..."
+    },
+    {
+      title: "Soliq Kodeksi — Soliq organlarining tekshiruv vakolatlari",
+      docType: "nizom",
+      number: "№ ZRU-702",
+      date: "2021-01-01",
+      relevantOrgs: JSON.stringify(["soliq"]),
+      summary: "Soliq organlari tomonidan oʻtkaziladigan tekshiruvlar tartibi, talab qilinadigan hujjatlar roʻyxati va javob muddatlari.",
+      fullText: "Soliq kodeksiga muvofiq, soliq organlari soliq to'lovchilarning moliyaviy-xo'jalik faoliyatini tekshirish, hujjatlarni talab qilib olish va soliq qonunchiligi buzilishini aniqlash huquqiga ega..."
+    },
+    {
+      title: "Prokuratara toʻgʻrisidagi Qonun — Bank tuzilmalariga murojaat tartibi",
+      docType: "qonun",
+      number: "№ ZRU-445",
+      date: "2015-08-20",
+      relevantOrgs: JSON.stringify(["prokuratura"]),
+      summary: "Prokuratura organlarining kredit tashkilotlariga soʻrov yuborish huquqi va javob muddatlari (15 ish kuni).",
+      fullText: "Prokuratura organlari qonun ustuvorligini ta'minlash maqsadida banklardan zarur ma'lumotlarni so'rashlari mumkin. Javob berish muddati odatda 15 ish kunini tashkil etadi..."
+    },
+    {
+      title: "Bank siri toʻgʻrisida nizom",
+      docType: "nizom",
+      number: "№ 2891",
+      date: "2020-06-15",
+      relevantOrgs: JSON.stringify(["prokuratura", "soliq", "markaziy_bank", "davlat"]),
+      summary: "Bank sirini tashkil etuvchi maʼlumotlar doirasi, ularni oshkor qilish shartlari va tartib-qoidalari.",
+      fullText: "Bank siri mijozlarning operatsiyalari, hisobvaraqlari va omonatlari to'g'risidagi ma'lumotlarni o'z ichiga oladi. Ushbu ma'lumotlar faqat qonunda belgilangan hollarda davlat organlariga taqdim etilishi mumkin..."
+    },
+    {
+      title: "Pul yuvishga qarshi kurash qonuni",
+      docType: "qonun",
+      number: "№ ZRU-330",
+      date: "2004-08-26",
+      relevantOrgs: JSON.stringify(["prokuratura", "markaziy_bank", "davlat"]),
+      summary: "Shubhali operatsiyalar haqida hisobot berish majburiyati, monitoring tizimi va muassasa javobgarligi.",
+      fullText: "Jinoiy faoliyatdan olingan daromadlarni legallashtirishga va terrorizmni moliyalashtirishga qarshi kurashish to'g'risidagi qonun banklar uchun shubhali operatsiyalarni monitoring qilish majburiyatini yuklaydi..."
+    },
+    {
+      title: "Kredit tashkilotlari toʻgʻrisidagi qonun",
+      docType: "qonun",
+      number: "№ ZRU-215",
+      date: "1996-04-25",
+      relevantOrgs: JSON.stringify(["markaziy_bank", "soliq"]),
+      summary: "Banklar va kredit tashkilotlarining litsenziyalash, kapital talablari va hisobot berish tartibini belgilaydi.",
+      fullText: "Banklar va bank faoliyati to'g'risidagi qonun banklarni tashkil etish, litsenziyalash va ularning faoliyatini tartibga solishning asosiy tamoyillarini belgilaydi..."
+    }
+  ];
+
+  for (const doc of legalDocs) {
+    await prisma.legalDoc.create({ data: doc });
+    console.log(`📜 Hujjat qo'shildi: ${doc.title}`);
+  }
+
   console.log("\n🎉 Premium bazani to'ldirish muvaffaqiyatli yakunlandi!");
 }
 
