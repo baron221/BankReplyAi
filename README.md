@@ -13,6 +13,7 @@
 - **🌍 Avto-tarjima (i18n AI)**: Xalqaro murojaatlarni (RU/EN) o'zbekchaga o'girish va javobni original tilga tarjima qilish.
 - **📊 Audit va Monitoring**: Tizimdagi barcha harakatlarning to'liq tarixi (Audit Log).
 - **💬 AI Copilot / Chatbot**: Har bir murojaat bo'yicha operatorga maslahat beruvchi va savollarga javob beruvchi aqlli suhbatdosh.
+- **📥 PDF Yuklab olish**: Murojaatlarga biriktirilgan PDF hujjatlarni tizimning o'zidan yuklab olish imkoniyati.
 
 ## 🛠 Texnik Stek
 
