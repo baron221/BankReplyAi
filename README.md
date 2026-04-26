@@ -1,6 +1,6 @@
 # 🏛️ BankReplyAI (Compliance & AI Response)
 
-**BankReplyAI** — bu banklar va davlat tashkilotlari uchun mo'ljallangan, sun'iy intellekt (Gemini 2.0 Flash) yordamida kiruvchi murojaatlarni tahlil qilish va ularga qonuniy asoslangan javoblar tayyorlashni avtomatlashtiruvchi premium platforma.
+**BankReplyAI** — bu banklar va davlat tashkilotlari uchun mo'ljallangan, sun'iy intellekt (Gemini 2.5 Flash dan foydalanildi yanada yuqora aniqlik va sifafat uchun Gemini pro versiyalaridan foydalaning) yordamida kiruvchi murojaatlarni tahlil qilish va ularga qonuniy asoslangan javoblar tayyorlashni avtomatlashtiruvchi premium platforma.
 
 ## 🚀 Asosiy Imkoniyatlar
 
